@@ -1,13 +1,10 @@
+#alt
+
 @extends('layouts.app')
 
 @section('content')
 <div class="container" style="max-width: 1200px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1em;">
-        <h1 style="margin:0;">Dart Zähler</h1>
-        <h2 style="margin:0;">
-            Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
-        </h2>
-    </div>
+    <h1>Dart Zähler</h1>
     <form method="POST" action="{{ route('dart.reset') }}">
         @csrf
         <button>Spiel zurücksetzen</button>
@@ -47,6 +44,9 @@
 
         <!-- Rechte Spalte: Eingabe -->
         <div class="dart-rightcol">
+            <h2>
+                Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
+            </h2>
             @if(!$game['winner'])
             <form id="dart-form" method="POST" action="{{ route('dart.throw') }}">
                 @csrf
@@ -133,20 +133,13 @@ document.getElementById('reset-btn').onclick = function() {
 
 updateDisplay();
 
-// Einfache Timer-Logik: Spielstart aus PHP, dann im JS durchlaufen lassen!
-let startTime = new Date("{{ \Carbon\Carbon::parse($game['start_time'])->format('Y-m-d\TH:i:s\Z') }}");
+// Millisekundengenauer Timer: Hochzählen ab 0, stoppt bei Gewinn
+let timerMs = {{ ($game['timer_seconds_display'] ?? 0) * 1000 }};
 let timerDiv = document.getElementById('timer');
 let winner = @json($game['winner']);
 let timerInterval;
 function updateTimer() {
-    let ms;
-    if(!winner) {
-        ms = new Date() - startTime;
-    } else {
-        // Wenn das Spiel vorbei ist, Timer einfrieren
-        ms = new Date("{{ $game['throw_time'] }}") - startTime;
-        clearInterval(timerInterval);
-    }
+    let ms = timerMs;
     let min = Math.floor(ms/60000);
     let sec = Math.floor((ms%60000)/1000);
     let msec = Math.floor((ms%1000)/10);
@@ -154,6 +147,8 @@ function updateTimer() {
         String(min).padStart(2,'0') + ':' + 
         String(sec).padStart(2,'0') + '.' +
         String(msec).padStart(2,'0');
+    if(!winner) timerMs += 10;
+    else clearInterval(timerInterval);
 }
 timerInterval = setInterval(updateTimer, 10);
 updateTimer();

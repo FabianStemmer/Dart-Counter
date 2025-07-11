@@ -25,11 +25,9 @@ class DartController extends Controller
             'bust' => false,
             'bust_message' => '',
             'winner' => null,
-            'start_time' => now(),
+            'start_time' => now(), // Nur Spielstart speichern!
             'throw_time' => now(),
             'round_darts' => [],
-            'timer_started_at' => now(),
-            'timer_seconds' => 0,
         ];
         foreach ($players as $player) {
             $game['players'][] = [
@@ -49,31 +47,21 @@ class DartController extends Controller
     {
         $game = Session::get('dart_game', null);
         if(!$game) return redirect()->route('dart.setup');
-        if (!$game['winner'] && isset($game['timer_started_at'])) {
-            $game['timer_seconds_display'] = $game['timer_seconds'] + now()->diffInSeconds(\Carbon\Carbon::parse($game['timer_started_at']));
-        } else {
-            $game['timer_seconds_display'] = $game['timer_seconds'];
-        }
+        // Die Zeit wird nur im Frontend berechnet!
         Session::put('dart_game', $game);
         return view('dart.index', ['game' => $game]);
     }
     
     public function throwDart(Request $request)
     {
-        $throws = $request->input('throws', []);
         $game = Session::get('dart_game');
         if (!$game || $game['winner']) return redirect()->route('dart.index');
-
-        // TIMER: Zeit seit letztem Start addieren
-        if (isset($game['timer_started_at'])) {
-            $game['timer_seconds'] += now()->diffInSeconds(\Carbon\Carbon::parse($game['timer_started_at']));
-            $game['timer_started_at'] = now();
-        }
 
         $current = $game['current'];
         $player = &$game['players'][$current];
 
         $roundsum = 0;
+        $throws = $request->input('throws', []);
         foreach ($throws as $throw) {
             $points = (int)($throw['points'] ?? 0);
             $multiplier = (int)($throw['multiplier'] ?? 1);
@@ -113,12 +101,12 @@ class DartController extends Controller
         $game['bust_message'] = $bust_message;
         $game['winner'] = $winner;
 
+        // Spielerwechsel, falls kein Gewinner
         if (!$winner) {
             $game['current'] = ($game['current'] + 1) % count($game['players']);
         }
         Session::put('dart_game', $game);
         return redirect()->route('dart.index');
-
     }
 
     public function resetGame()

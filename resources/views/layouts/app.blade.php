@@ -66,5 +66,8 @@
 </head>
 <body>
     @yield('content')
+    <footer style="text-align:center; font-size:0.8em; color:#888; margin-top:60px;">
+        &copy;2025 Stemmer Software Systems Engineering
+    </footer>
 </body>
 </html>
