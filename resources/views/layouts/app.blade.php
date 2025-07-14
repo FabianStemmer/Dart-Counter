@@ -10,7 +10,7 @@
         .dart-btn {
             min-width: 96px; min-height: 96px; font-size: 2.2em; border-radius: 10px;
             border: 2px solid #222; background: #f5f5f5; cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s; color: black;
         }
         .dart-btn.selected { background: #8ecae6; }
         .multiplier-btn { background: #ffd166; }
@@ -27,9 +27,9 @@
         flex-wrap: nowrap;
     }
     .dart-leftcol {
-        flex: 1 1 350px;
+        flex: 1 1 450px;
         min-width: 300px;
-        max-width: 380px;
+        max-width: 450px;
     }
     .dart-rightcol {
         flex: 2 1 540px;

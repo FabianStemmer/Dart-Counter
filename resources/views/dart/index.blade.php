@@ -57,7 +57,7 @@
                 <input type="hidden" name="throws[2][points]" id="points2" value="0">
                 <input type="hidden" name="throws[2][multiplier]" id="multiplier2" value="1">
                 <div class="dart-board">
-                    @for($i=1; $i<=20; $i++)
+                    @for($i=0; $i<=20; $i++)
                         <button class="dart-btn" type="button" data-value="{{ $i }}">{{ $i }}</button>
                     @endfor
                     <button class="dart-btn" type="button" data-value="25">Bull</button>
@@ -67,13 +67,16 @@
                     <button type="button" class="dart-btn multiplier-btn" data-mul="3">Triple</button>
                     <button type="button" class="dart-btn" id="reset-btn">Reset</button>
                 </div>
-                <div style="margin-top:1em">
-                    <span>Wurf 1: <span id="wurf0display">-</span></span> /
-                    <span>Wurf 2: <span id="wurf1display">-</span></span> /
-                    <span>Wurf 3: <span id="wurf2display">-</span></span>
-                    <br>
-                    <strong>Rundensumme: <span id="roundsum">0</span></strong>
-                </div>
+		<div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top:1em;">
+		    <div>
+		        <span>Wurf 1: <span id="wurf0display">-</span></span> /
+		        <span>Wurf 2: <span id="wurf1display">-</span></span> /
+		        <span>Wurf 3: <span id="wurf2display">-</span></span>
+		        <br>
+		        <strong>Rundensumme: <span id="roundsum">0</span></strong>
+		    </div>
+		    <button type="button" id="next-btn" style="display:none;">Weiter</button>
+		</div>
             </form>
             @endif
         </div>
@@ -88,7 +91,7 @@ function updateDisplay() {
     let sum = 0;
     for(let i=0;i<3;i++) {
         let val = throwData[i].points * throwData[i].multiplier;
-        document.getElementById('wurf'+i+'display').textContent = val > 0 ? (throwData[i].points + (throwData[i].multiplier>1 ? 'x'+throwData[i].multiplier : '')) : '-';
+	document.getElementById('wurf'+i+'display').textContent = (currentThrow > i || throwData[i].points > 0) ? (throwData[i].points + (throwData[i].multiplier>1 ? 'x'+throwData[i].multiplier : '')) : '-';
         sum += val;
         document.getElementById('points'+i).value = throwData[i].points;
         document.getElementById('multiplier'+i).value = throwData[i].multiplier;
@@ -107,7 +110,8 @@ document.querySelectorAll('.dart-btn[data-value]').forEach(btn => {
             currentThrow++;
             updateDisplay();
             if(currentThrow === 3) {
-                setTimeout(()=>{ document.getElementById('dart-form').submit(); }, 150);
+//                setTimeout(()=>{ document.getElementById('dart-form').submit(); }, 150);
+	    document.getElementById('next-btn').style.display = 'inline-block';
             }
         }
     });
@@ -128,8 +132,16 @@ document.getElementById('reset-btn').onclick = function() {
     multiplier = 1;
     throwData = [{points:0,multiplier:1},{points:0,multiplier:1},{points:0,multiplier:1}];
     document.querySelectorAll('.multiplier-btn').forEach(b=>b.classList.remove('selected'));
+    document.getElementById('next-btn').style.display = 'none';
     updateDisplay();
 };
+
+
+// zeigt meinen Korrekturbutton nach dem dritten Spielzug
+document.getElementById('next-btn').onclick = function() {
+    document.getElementById('dart-form').submit();
+};
+
 
 updateDisplay();
 
