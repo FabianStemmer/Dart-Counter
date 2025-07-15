@@ -114,4 +114,40 @@ class DartController extends Controller
         Session::forget('dart_game');
         return redirect()->route('dart.setup');
     }
+
+    public function newRound(Request $request) {
+        $game = session('dart_game');
+    
+        if (!$game || !isset($game['players'])) {
+            return redirect()->route('dart.setup')->with('error', 'Spieler konnten nicht geladen werden.');
+        }
+
+        $players = $game['players'];
+
+        $newGame = [
+            'players' => array_map(function($p) use ($game) {
+                return [
+                    'name' => $p['name'],
+                    'score' => $game['start_score'] ?? 501,
+                    'darts' => [],
+                    'total_darts' => 0,
+                    'total_points' => 0,
+                    'average' => 0,
+                ];
+            }, $players),
+            'current' => 0,
+            'start_score' => $game['start_score'] ?? 501,
+            'bust' => false,
+            'bust_message' => '',
+            'winner' => null,
+            'start_time' => now(),
+            'throw_time' => now(),
+            'round_darts' => [],
+        ];
+
+        Session::put('dart_game', $newGame);
+    
+        return redirect()->route('dart.index');
+    }
+
 }

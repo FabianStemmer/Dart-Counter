@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container" style="max-width: 1200px;">
+<div class="container" style="max-width: 1400px;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1em;">
-        <h1 style="margin:0;">Dart Zähler</h1>
+        <h1 style="margin:0;">Sophiensaele Dart Counter</h1>
         <h2 style="margin:0;">
             Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
         </h2>
@@ -16,9 +16,13 @@
     <div class="dart-flex-wrapper">
         <!-- Linke Spalte: Punktestände & Infos -->
         <div class="dart-leftcol">
-            @if ($game['winner'])
-                <h2>🎉 {{$game['winner']}} hat gewonnen! 🎉</h2>
-            @endif
+	    @if ($game['winner'])
+    		<h2>🎉 {{$game['winner']}} hat gewonnen! 🎉</h2>
+    		<form method="POST" action="{{ route('dart.newround') }}">
+        	    @csrf
+        	    <button class="btn btn-success">Neue Runde mit den gleichen Spielern</button>
+    		</form>
+	    @endif
             <h2>Punktestände</h2>
             <table>
                 <tr>
@@ -128,12 +132,12 @@ document.querySelectorAll('.multiplier-btn').forEach(btn => {
 
 // Reset round
 document.getElementById('reset-btn').onclick = function() {
-    currentThrow = 0;
-    multiplier = 1;
-    throwData = [{points:0,multiplier:1},{points:0,multiplier:1},{points:0,multiplier:1}];
-    document.querySelectorAll('.multiplier-btn').forEach(b=>b.classList.remove('selected'));
-    document.getElementById('next-btn').style.display = 'none';
-    updateDisplay();
+    if (currentThrow > 0) {
+        currentThrow--;
+        throwData[currentThrow] = { points: 0, multiplier: 1 };
+        document.getElementById('next-btn').style.display = 'none';
+        updateDisplay();
+    }
 };
 
 
