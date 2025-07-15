@@ -2,72 +2,125 @@
 <html lang="de">
 <head>
     <meta charset="utf-8">
-    <title>Dart Zähler</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
-    <style>
-        .dart-board { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1em;}
-        .dart-btn {
-            min-width: 96px; min-height: 96px; font-size: 2.2em; border-radius: 10px;
-            border: 2px solid #222; background: #f5f5f5; cursor: pointer;
-            transition: background 0.2s; color: black;
-        }
-        .dart-btn.selected { background: #8ecae6; }
-        .multiplier-btn { background: #ffd166; }
-        .player-row.active { font-weight: bold; background: #caf0f8; }
-        .timer { font-size: 1.5em; margin-top: 1em; }
-        @media (max-width: 600px) {
-            .dart-btn { min-width: 56px; min-height: 56px; font-size: 1.3em;}
-        }
+    <title>Sophiensaele Dart Zähler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- SimpleCSS Baseline Design -->
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+
+    <style>
+    /* Container mittig und mit begrenzter Breite */
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1em;
+    }
+
+    /* Flex-Wrapper für Statistik + Eingabe */
     .dart-flex-wrapper {
         display: flex;
-        gap: 3em;
+        flex-direction: row;
         align-items: flex-start;
         flex-wrap: nowrap;
+        gap: 2em;
     }
+
+    /* Linke Spalte: Statistik */
     .dart-leftcol {
-        flex: 1 1 450px;
-        min-width: 300px;
-        max-width: 450px;
+        flex: 1 1 350px;
+        min-width: 250px;
+        max-width: 400px;
+        margin-left: 0;
+        padding-left: 0.5em;
+        background: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
+
+    /* Rechte Spalte: Eingabe */
     .dart-rightcol {
-        flex: 2 1 540px;
-        min-width: 360px;
-        max-width: 900px;
+        flex: 2 1 600px;
+        min-width: 300px;
+        max-width: 800px;
     }
-    @media (max-width: 1200px) {
-        .dart-rightcol { max-width: 100%; }
-    }
-    @media (max-width: 900px) {
-        .dart-flex-wrapper { flex-direction: column; gap: 1.2em; }
-        .dart-rightcol, .dart-leftcol { max-width: 100%; min-width: 0; }
-    }
+
+    /* Dartboard als Grid */
     .dart-board {
         display: grid;
         grid-template-columns: repeat(6, 1fr);
         gap: 12px;
         margin-bottom: 1em;
     }
+
+    /* Dart-Buttons */
     .dart-btn {
-        min-width: 70px; min-height: 70px; font-size: 1.7em; border-radius: 10px;
-        border: 2px solid #222; background: #f5f5f5; cursor: pointer;
-        transition: background 0.2s;
-        box-sizing: border-box;
         width: 100%;
         height: 100%;
+        min-width: 70px;
+        min-height: 70px;
+        font-size: 1.7em;
+        border-radius: 10px;
+        border: 2px solid #222;
+        background: #f5f5f5;
+        cursor: pointer;
+        transition: background 0.2s;
+        box-sizing: border-box;
+        color: black;
     }
-    .dart-btn.selected { background: #8ecae6; }
-    .multiplier-btn { background: #ffd166; }
-    .player-row.active { font-weight: bold; background: #caf0f8; }
-    .timer { font-size: 1.3em; margin-top: 1em; }
 
+    /* Ausgewählter Button & Multiplier */
+    .dart-btn.selected {
+        background: #8ecae6;
+    }
+    .multiplier-btn {
+        background: #ffd166;
+    }
+
+    /* Aktiver Spieler hervorheben */
+    .player-row.active {
+        font-weight: bold;
+        background: #caf0f8;
+    }
+
+    /* Timer */
+    .timer {
+        font-size: 1.3em;
+        margin-top: 1em;
+    }
+
+    /* Bust Message optisch hervorgehoben */
+    .bust-message {
+        color: red;
+        font-weight: bold;
+        font-size: 1.5em;
+        margin-top: 1em;
+    }
+
+    /* Mobile Optimierung */
+    @media (max-width: 900px) {
+        .dart-flex-wrapper {
+            flex-direction: column;
+            gap: 1.5em;
+        }
+
+        .dart-leftcol,
+        .dart-rightcol {
+            max-width: 100%;
+            min-width: auto;
+        }
+    }
     </style>
 </head>
 <body>
+
+    {{-- Hauptinhalt --}}
     @yield('content')
-    <footer style="text-align:center; font-size:0.8em; color:#888; margin-top:60px;">
-        &copy;2025 Stemmer Software Systems Engineering
+
+    {{-- Footer --}}
+    <footer style="text-align: center; font-size: 0.8em; color: #888; margin-top: 60px;">
+        &copy; 2025 Stemmer Software Systems Engineering
     </footer>
+
 </body>
 </html>
+

@@ -93,7 +93,17 @@ class DartController extends Controller
                     $player['total_points'] += $val;
                 }
             }
-            $player['average'] = $player['total_darts'] > 0 ? round($player['total_points'] / $player['total_darts'],1) : 0;
+//            $player['average'] = $player['total_darts'] > 0 ? round($player['total_points'] / $player['total_darts'],1) : 0;
+
+	    $startScore = $game['start_score'];
+	    $rest = $player['score'];
+	    $scoredPoints = $startScore - $rest;
+	    $throwsCount = $player['total_darts'];
+
+	    $player['average'] = $throwsCount > 0
+	        ? round(($scoredPoints / $throwsCount) * 3, 1)
+	    : 0;
+
         }
 
         $game['throw_time'] = now();
