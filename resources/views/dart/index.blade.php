@@ -1,14 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container" style="max-width: 1400px;">
+<div class="container" style="max-width: 1400px;" background-color="green";>
 
     <!-- Neuer Header-Block -->
     <div class="header-bar">
-        <h1>Sophiensaele Dart Counter</h1>
-        <h2>
-            Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
-        </h2>
+        <div float:left; align:center;>
+	    <h1>Sophiensaele Dart Counter</h1>
+	</div>
+	<div float:right;>
+            <h2>Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span></h2>
+        </div>
     </div>
 
     <form method="POST" action="{{ route('dart.reset') }}">
