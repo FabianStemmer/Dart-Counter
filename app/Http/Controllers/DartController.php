@@ -51,7 +51,7 @@ class DartController extends Controller
         Session::put('dart_game', $game);
         return view('dart.index', ['game' => $game]);
     }
-    
+
     public function throwDart(Request $request)
     {
         $game = Session::get('dart_game');
@@ -77,7 +77,7 @@ class DartController extends Controller
         if ($newScore < 0 || $newScore == 1) {
             $bust = true;
             $bust_message = 'Bust! Punkte werden zurückgesetzt.';
-            // Kein Abzug, zurücksetzen auf Anfang der Runde
+        // Kein Abzug, zurücksetzen auf Anfang der Runde
         } elseif ($newScore == 0) {
             $player['score'] = 0;
             $winner = $player['name'];
@@ -87,23 +87,21 @@ class DartController extends Controller
                 $points = (int)($throw['points'] ?? 0);
                 $multiplier = (int)($throw['multiplier'] ?? 1);
                 $val = $points * $multiplier;
-                if($val>0){
+                if ($val > 0) {
                     $player['darts'][] = $val;
                     $player['total_darts']++;
                     $player['total_points'] += $val;
                 }
             }
-//            $player['average'] = $player['total_darts'] > 0 ? round($player['total_points'] / $player['total_darts'],1) : 0;
 
-	    $startScore = $game['start_score'];
-	    $rest = $player['score'];
-	    $scoredPoints = $startScore - $rest;
-	    $throwsCount = $player['total_darts'];
+            $startScore = $game['start_score'];
+            $rest = $player['score'];
+            $scoredPoints = $startScore - $rest;
+            $throwsCount = $player['total_darts'];
 
-	    $player['average'] = $throwsCount > 0
-	        ? round(($scoredPoints / $throwsCount) * 3, 1)
-	    : 0;
-
+            $player['average'] = $throwsCount > 0
+                ? round(($scoredPoints / $throwsCount) * 3, 1)
+                : 0;
         }
 
         $game['throw_time'] = now();
@@ -111,11 +109,18 @@ class DartController extends Controller
         $game['bust_message'] = $bust_message;
         $game['winner'] = $winner;
 
+        // final_duration NUR speichern wenn es einen Gewinner gibt!
+        if ($request->has('final_duration') && $winner) {
+            $game['final_duration'] = $request->input('final_duration');
+        }
+
         // Spielerwechsel, falls kein Gewinner
         if (!$winner) {
             $game['current'] = ($game['current'] + 1) % count($game['players']);
         }
+
         Session::put('dart_game', $game);
+
         return redirect()->route('dart.index');
     }
 
@@ -127,7 +132,7 @@ class DartController extends Controller
 
     public function newRound(Request $request) {
         $game = session('dart_game');
-    
+
         if (!$game || !isset($game['players'])) {
             return redirect()->route('dart.setup')->with('error', 'Spieler konnten nicht geladen werden.');
         }

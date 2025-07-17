@@ -121,6 +121,9 @@
         &copy; 2025 Stemmer Software Systems Engineering
     </footer>
 
+    {{-- Skripte einbinden --}}
+    @yield('scripts')
+
 </body>
 </html>
 
