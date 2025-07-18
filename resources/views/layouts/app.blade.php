@@ -68,6 +68,26 @@
         color: black;
     }
 
+    .dart-btn:hover {
+        background-color: #ddd;
+    }
+
+    .dart-btn.spin {
+        animation: dart-spin 0.6s ease-in-out;
+    }
+
+    @keyframes dart-spin {
+        0% { transform: rotate(0deg) scale(1); }
+        50% { transform: rotate(360deg) scale(1.1); }
+        100% { transform: rotate(720deg) scale(1); }
+    }
+
+    .miss-btn {
+        grid-column: span 2; /* ⬅️ Macht den Miss Button breiter */
+        font-weight: bold;
+        background-color: #f88;
+    }
+
     /* Ausgewählter Button & Multiplier */
     .dart-btn.selected {
         background: #8ecae6;

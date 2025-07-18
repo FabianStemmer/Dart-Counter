@@ -16,29 +16,31 @@ class DartController extends Controller
     {
         $numPlayers = (int) $request->input('num_players', 2);
         $players = array_slice($request->input('players', []), 0, $numPlayers);
-        $gameType = $request->input('game_type', 301);
+        $gameType = (int) $request->input('game_type', 301);
 
         $game = [
             'players' => [],
             'current' => 0,
-            'start_score' => (int)$gameType,
+            'start_score' => $gameType,
             'bust' => false,
             'bust_message' => '',
             'winner' => null,
-            'start_time' => now(), // Nur Spielstart speichern!
+            'start_time' => now(),
             'throw_time' => now(),
             'round_darts' => [],
         ];
+
         foreach ($players as $player) {
             $game['players'][] = [
                 'name' => $player,
-                'score' => (int)$gameType,
+                'score' => $gameType,
                 'darts' => [],
                 'total_darts' => 0,
                 'total_points' => 0,
                 'average' => 0,
             ];
         }
+
         Session::put('dart_game', $game);
         return redirect()->route('dart.index');
     }
@@ -46,8 +48,13 @@ class DartController extends Controller
     public function index()
     {
         $game = Session::get('dart_game', null);
-        if(!$game) return redirect()->route('dart.setup');
-        // Die Zeit wird nur im Frontend berechnet!
+        if (!$game) return redirect()->route('dart.setup');
+
+        // ⬇️ Checkout-Hilfe laden
+        $checkoutTable = include(app_path('CheckoutTable.php'));
+        $currentScore = $game['players'][$game['current']]['score'] ?? null;
+        $game['checkout_tip'] = $currentScore !== null ? ($checkoutTable[$currentScore] ?? null) : null;
+
         Session::put('dart_game', $game);
         return view('dart.index', ['game' => $game]);
     }
@@ -62,13 +69,15 @@ class DartController extends Controller
 
         $roundsum = 0;
         $throws = $request->input('throws', []);
+
         foreach ($throws as $throw) {
             $points = (int)($throw['points'] ?? 0);
             $multiplier = (int)($throw['multiplier'] ?? 1);
             $roundsum += $points * $multiplier;
         }
+
         $oldScore = $player['score'];
-        $newScore = $player['score'] - $roundsum;
+        $newScore = $oldScore - $roundsum;
 
         $bust = false;
         $bust_message = '';
@@ -77,26 +86,24 @@ class DartController extends Controller
         if ($newScore < 0 || $newScore == 1) {
             $bust = true;
             $bust_message = 'Bust! Punkte werden zurückgesetzt.';
-        // Kein Abzug, zurücksetzen auf Anfang der Runde
         } elseif ($newScore == 0) {
             $player['score'] = 0;
             $winner = $player['name'];
         } else {
             $player['score'] = $newScore;
+
             foreach ($throws as $throw) {
                 $points = (int)($throw['points'] ?? 0);
                 $multiplier = (int)($throw['multiplier'] ?? 1);
                 $val = $points * $multiplier;
-                if ($val > 0) {
-                    $player['darts'][] = $val;
-                    $player['total_darts']++;
-                    $player['total_points'] += $val;
-                }
+
+                $player['darts'][] = $val;
+                $player['total_darts']++;
+                $player['total_points'] += $val;
             }
 
             $startScore = $game['start_score'];
-            $rest = $player['score'];
-            $scoredPoints = $startScore - $rest;
+            $scoredPoints = $startScore - $player['score'];
             $throwsCount = $player['total_darts'];
 
             $player['average'] = $throwsCount > 0
@@ -109,18 +116,19 @@ class DartController extends Controller
         $game['bust_message'] = $bust_message;
         $game['winner'] = $winner;
 
-        // final_duration NUR speichern wenn es einen Gewinner gibt!
+        // ⬇️ Checkout-Hilfe (neu berechnen nach Zug)
+        $checkoutTable = include(app_path('CheckoutTable.php'));
+        $game['checkout_tip'] = $checkoutTable[$player['score']] ?? null;
+
         if ($request->has('final_duration') && $winner) {
             $game['final_duration'] = $request->input('final_duration');
         }
 
-        // Spielerwechsel, falls kein Gewinner
         if (!$winner) {
             $game['current'] = ($game['current'] + 1) % count($game['players']);
         }
 
         Session::put('dart_game', $game);
-
         return redirect()->route('dart.index');
     }
 
@@ -130,7 +138,8 @@ class DartController extends Controller
         return redirect()->route('dart.setup');
     }
 
-    public function newRound(Request $request) {
+    public function newRound(Request $request)
+    {
         $game = session('dart_game');
 
         if (!$game || !isset($game['players'])) {
@@ -140,7 +149,7 @@ class DartController extends Controller
         $players = $game['players'];
 
         $newGame = [
-            'players' => array_map(function($p) use ($game) {
+            'players' => array_map(function ($p) use ($game) {
                 return [
                     'name' => $p['name'],
                     'score' => $game['start_score'] ?? 501,
@@ -161,8 +170,6 @@ class DartController extends Controller
         ];
 
         Session::put('dart_game', $newGame);
-    
         return redirect()->route('dart.index');
     }
-
 }

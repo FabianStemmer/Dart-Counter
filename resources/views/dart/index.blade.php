@@ -5,12 +5,8 @@
 
     <!-- Header -->
     <div class="header-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1em;">
-        <div>
-            <h1>Sophiensaele Dart Counter</h1>
-        </div>
-        <div>
-            <h2>Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span></h2>
-        </div>
+        <div><h1>Sophiensaele Dart Counter</h1></div>
+        <div><h2>Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span></h2></div>
     </div>
 
     <form method="POST" action="{{ route('dart.reset') }}">
@@ -21,7 +17,6 @@
     <div class="dart-flex-wrapper" style="display:flex; gap:2rem; margin-top:1em;">
         <!-- Linke Spalte -->
         <div class="dart-leftcol" style="flex:1;">
-
             <div id="winner-container" style="margin-bottom:1em;">
                 @if ($game['winner'])
                     <h2 class="winner-headline">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</h2>
@@ -32,37 +27,39 @@
                 @endif
             </div>
 
+            @if($game['checkout_tip'] ?? false)
+                <div style="margin:1em 0; font-size:1.2em; color:#232;">
+                    <strong>Checkout-Hilfe:</strong>
+                    @foreach($game['checkout_tip'] as $step)
+                        {{ $step }}{{ !$loop->last ? ' – ' : '' }}
+                    @endforeach
+                </div>
+            @endif
+
             <h2>Punktestände</h2>
             <table style="width:100%; border-collapse: collapse;">
                 <thead>
-                <tr>
-                    <th style="border-bottom:1px solid #ccc; text-align:left;">Name</th>
-                    <th style="border-bottom:1px solid #ccc; text-align:right;">Punkte</th>
-                    <th style="border-bottom:1px solid #ccc; text-align:right;">Darts</th>
-                    <th style="border-bottom:1px solid #ccc; text-align:right;">Ø</th>
-                </tr>
+                  <tr>
+                      <th>Name</th><th style="text-align:right;">Punkte</th><th style="text-align:right;">Darts</th><th style="text-align:right;">Ø</th>
+                  </tr>
                 </thead>
                 <tbody>
-                @foreach($game['players'] as $i => $player)
-                    <tr style="@if($i == $game['current'] && !$game['winner']) font-weight:bold; background:#eef; @endif" class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
-                        <td>{{ $player['name'] }}</td>
-                        <td style="text-align:right;" id="score-{{ $i }}">{{ $player['score'] }}</td>
-                        <td style="text-align:right;">{{ $player['total_darts'] ?? 0 }}</td>
-                        <td style="text-align:right;">{{ $player['average'] ?? 0 }}</td>
-                    </tr>
-                @endforeach
+                    @foreach($game['players'] as $i => $player)
+                        <tr class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
+                            <td>{{ $player['name'] }}</td>
+                            <td style="text-align:right;" id="score-{{ $i }}">{{ $player['score'] }}</td>
+                            <td style="text-align:right;">{{ $player['total_darts'] ?? 0 }}</td>
+                            <td style="text-align:right;">{{ $player['average'] ?? 0 }}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
 
-            @if (session('error'))
-                <div style="color:red; margin-top:1em;">{{ session('error') }}</div>
-            @endif
             @if ($game['bust'])
-                <div style="color:red; font-weight:bold; font-size:1.5em; margin-top:1em;">{{ $game['bust_message'] }}</div>
+                <div class="bust-message">{{ $game['bust_message'] }}</div>
             @endif
 
-            <div id="timer" class="timer" style="margin-top: 1em; font-weight: bold; font-size: 1.2em;">Spieldauer: 00:00.00</div>
-
+            <div id="timer" class="timer">Spieldauer: 00:00.00</div>
         </div>
 
         <!-- Rechte Spalte -->
@@ -75,7 +72,7 @@
                     <input type="hidden" name="throws[{{ $i }}][multiplier]" id="multiplier{{ $i }}" value="1">
                 @endfor
 
-                <div class="dart-board" style="display: grid; grid-template-columns: repeat(6, 70px); gap:12px; margin-bottom:1em;">
+                <div class="dart-board">
                     @for($i = 1; $i <= 20; $i++)
                         <button type="button" class="dart-btn" data-value="{{ $i }}">{{ $i }}</button>
                     @endfor
@@ -85,137 +82,105 @@
                 </div>
 
                 <div style="margin-bottom: 1em;">
-                    <button type="button" class="dart-btn multiplier-btn" data-mul="2" style="margin-right: 8px;">Double</button>
-                    <button type="button" class="dart-btn multiplier-btn" data-mul="3" style="margin-right: 8px;">Triple</button>
+                    <button type="button" class="dart-btn multiplier-btn" data-mul="2">Double</button>
+                    <button type="button" class="dart-btn multiplier-btn" data-mul="3">Triple</button>
                     <button type="button" class="dart-btn" id="reset-btn">Letzten Wurf zurück</button>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="display:flex; justify-content:space-between;">
                     <div>
                         Wurf 1: <span id="wurf0display">-</span> /
                         Wurf 2: <span id="wurf1display">-</span> /
-                        Wurf 3: <span id="wurf2display">-</span>
-                        <br>
+                        Wurf 3: <span id="wurf2display">-</span><br>
                         <strong>Rundensumme: <span id="roundsum">0</span></strong>
                     </div>
-
                     <button type="button" id="next-btn" style="display:none;">Weiter</button>
                 </div>
-
             </form>
         </div>
     </div>
 </div>
+@endsection
 
-<style>
-    .dart-btn {
-        height: 70px;
-        font-size: 1.7em;
-        border-radius: 10px;
-        border: 2px solid #222;
-        background-color: #f5f5f5;
-        cursor: pointer;
-        user-select: none;
-        transition: background 0.2s;
-        color: black;
-    }
-
-    .dart-btn:hover {
-        background-color: #ddd;
-    }
-
-    .dart-btn.spin {
-        animation: dart-spin 0.6s ease-in-out;
-    }
-
-    @keyframes dart-spin {
-        0% { transform: rotate(0deg) scale(1); }
-        50% { transform: rotate(360deg) scale(1.1); }
-        100% { transform: rotate(720deg) scale(1); }
-    }
-
-    .miss-btn {
-        grid-column: span 2;
-        font-weight: bold;
-        background-color: #f88;
-    }
-
-    .multiplier-btn.selected {
-        background-color: #4caf50;
-        color: white;
-    }
-
-    .player-row.active {
-        font-weight: bold;
-        background: #caf0f8;
-    }
-</style>
+<script>
+window.checkoutTable = @json(include(app_path('CheckoutTable.php')));
+</script>
 
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const winner = @json($game['winner'] ? true : false);
-    const finalDuration = winner ? @json($game['final_duration'] ?? null) : null;
+    const finalDuration = @json($game['final_duration'] ?? null);
 
     let initialScore = {{ $game['players'][$game['current']]['score'] }};
     let currentPlayer = {{ $game['current'] }};
     let currentThrow = 0;
-    let throwData = [
-        {points: 0, multiplier: 1},
-        {points: 0, multiplier: 1},
-        {points: 0, multiplier: 1}
-    ];
+    let throwData = [{points:0,multiplier:1},{points:0,multiplier:1},{points:0,multiplier:1}];
     let multiplier = 1;
 
     function updateDisplay() {
         let sum = 0;
         for(let i = 0; i < 3; i++) {
             let val = throwData[i].points * throwData[i].multiplier;
-            document.getElementById('wurf' + i + 'display').textContent =
-                (currentThrow > i || throwData[i].points > 0)
-                    ? (throwData[i].points + (throwData[i].multiplier > 1 ? 'x' + throwData[i].multiplier : ''))
-                    : '-';
+            document.getElementById('wurf'+i+'display').textContent =
+                (currentThrow > i || throwData[i].points > 0) ?
+                (throwData[i].points + (throwData[i].multiplier > 1 ? 'x'+throwData[i].multiplier : '')) :
+                '-';
             sum += val;
-            document.getElementById('points' + i).value = throwData[i].points;
-            document.getElementById('multiplier' + i).value = throwData[i].multiplier;
+            document.getElementById('points'+i).value = throwData[i].points;
+            document.getElementById('multiplier'+i).value = throwData[i].multiplier;
         }
 
         document.getElementById('roundsum').textContent = sum;
-
-        let newScore = initialScore - sum;
+        const newScore = initialScore - sum;
         document.getElementById('score-' + currentPlayer).textContent = newScore;
 
-        const winnerHeadline = document.querySelector('.winner-headline');
-        const winContainer = document.getElementById('winner-container');
-        if (newScore === 0 && !winnerHeadline) {
-            const headline = document.createElement('h2');
-            headline.className = 'winner-headline';
-            headline.textContent = '🎉 Gewonnen! 🎉';
-            winContainer.insertBefore(headline, winContainer.firstChild);
+        let checkoutDiv = document.getElementById('checkout-help');
+        if (!checkoutDiv) {
+            checkoutDiv = document.createElement('div');
+            checkoutDiv.id = 'checkout-help';
+            checkoutDiv.style.margin = '1em 0';
+            checkoutDiv.style.fontSize = '1.2em';
+            checkoutDiv.style.color = '#232';
+            const ref = document.querySelector('.dart-leftcol h2');
+            if (ref) ref.insertAdjacentElement('afterend', checkoutDiv);
+            else document.body.appendChild(checkoutDiv);
         }
-        if (newScore !== 0 && winnerHeadline) {
-            winnerHeadline.remove();
-        }
+        const tip = window.checkoutTable?.[newScore];
+        checkoutDiv.innerHTML = tip ? `<strong>Checkout-Hilfe:</strong> ${tip.join(' – ')}` : '';
 
-        // Weiter Button nur zeigen, wenn kein Gewinner und 3 Würfe eingetragen
-        if (!winner && currentThrow === 3) {
-            document.getElementById('next-btn').style.display = 'inline-block';
-        } else {
-            document.getElementById('next-btn').style.display = 'none';
+        let message = '';
+        if (newScore < 2 && newScore !== 0) message = "🚫 Bust! Bitte prüfen und <b>Weiter</b> klicken.";
+        if (newScore === 0) message = "🎉 Gewonnen! Bitte prüfen und <b>Weiter</b> klicken.";
+
+        let resultDiv = document.getElementById('result-hint');
+        if (!resultDiv) {
+            resultDiv = document.createElement('div');
+            resultDiv.id = 'result-hint';
+            resultDiv.style.margin = '10px 0';
+            resultDiv.style.fontWeight = 'bold';
+            resultDiv.style.fontSize = '1.2em';
+            resultDiv.style.color = '#900';
+            document.getElementById('winner-container').appendChild(resultDiv);
         }
+        resultDiv.innerHTML = message;
+
+        document.getElementById('next-btn').style.display =
+            (!winner && ((newScore === 0 || (newScore < 2 && newScore !== 0)) || currentThrow === 3))
+            ? 'inline-block' : 'none';
     }
 
-    // Klick Listener für Punkt-Buttons
     document.querySelectorAll('.dart-btn[data-value]').forEach(btn => {
         btn.addEventListener('click', () => {
             if (currentThrow < 3) {
                 btn.classList.add('spin');
                 setTimeout(() => btn.classList.remove('spin'), 600);
 
-                throwData[currentThrow].points = parseInt(btn.dataset.value);
-                throwData[currentThrow].multiplier = multiplier;
+                throwData[currentThrow] = {
+                    points: parseInt(btn.dataset.value),
+                    multiplier: multiplier
+                };
                 multiplier = 1;
-
                 document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
                 currentThrow++;
                 updateDisplay();
@@ -223,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Klick Listener für Multiplier Buttons
     document.querySelectorAll('.multiplier-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             multiplier = parseInt(btn.dataset.mul);
@@ -232,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Reset Button klick
     document.getElementById('reset-btn').onclick = () => {
         if (currentThrow > 0) {
             currentThrow--;
@@ -242,35 +205,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Weiter Button klick (Wert aus Timer holen und absenden)
     document.getElementById('next-btn').onclick = () => {
-        let timerText = document.getElementById('timer').textContent.replace('Spieldauer: ', '');
-        document.getElementById('final_duration').value = timerText;
+        document.getElementById('final_duration').value = document.getElementById('timer').textContent.replace('Spieldauer: ', '');
         document.getElementById('dart-form').submit();
     };
 
-    updateDisplay();
-
-    const startTime = new Date("{{ \Carbon\Carbon::parse($game['start_time'])->format('Y-m-d\\TH:i:s\\Z') }}");
-    const timerDiv = document.getElementById('timer');
-    let timerInterval;
-
-    function updateTimer() {
+    const startTime = new Date("{{ \Carbon\Carbon::parse($game['start_time'])->toIso8601String() }}");
+    const timer = document.getElementById('timer');
+    setInterval(() => {
         if (winner && finalDuration) {
-            timerDiv.textContent = 'Spieldauer: ' + finalDuration;
-            clearInterval(timerInterval);
+            timer.textContent = 'Spieldauer: ' + finalDuration;
             return;
         }
         const ms = new Date() - startTime;
         const min = Math.floor(ms / 60000);
         const sec = Math.floor((ms % 60000) / 1000);
         const msec = Math.floor((ms % 1000) / 10);
-        timerDiv.textContent = `Spieldauer: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${String(msec).padStart(2,'0')}`;
-    }
+        timer.textContent = `Spieldauer: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${String(msec).padStart(2,'0')}`;
+    }, 10);
 
-    timerInterval = setInterval(updateTimer, 10);
-    updateTimer();
+    updateDisplay();
 });
 </script>
 @endsection
-
