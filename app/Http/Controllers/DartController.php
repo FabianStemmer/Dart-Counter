@@ -38,6 +38,7 @@ class DartController extends Controller
                 'total_darts' => 0,
                 'total_points' => 0,
                 'average' => 0,
+                'misses' => 0,
             ];
         }
 
@@ -50,7 +51,7 @@ class DartController extends Controller
         $game = Session::get('dart_game', null);
         if (!$game) return redirect()->route('dart.setup');
 
-        // ⬇️ Checkout-Hilfe laden
+        // Checkout-Hilfe laden
         $checkoutTable = include(app_path('CheckoutTable.php'));
         $currentScore = $game['players'][$game['current']]['score'] ?? null;
         $game['checkout_tip'] = $currentScore !== null ? ($checkoutTable[$currentScore] ?? null) : null;
@@ -67,63 +68,83 @@ class DartController extends Controller
         $current = $game['current'];
         $player = &$game['players'][$current];
 
-        $roundsum = 0;
         $throws = $request->input('throws', []);
-
-        foreach ($throws as $throw) {
-            $points = (int)($throw['points'] ?? 0);
-            $multiplier = (int)($throw['multiplier'] ?? 1);
-            $roundsum += $points * $multiplier;
-        }
-
-        $oldScore = $player['score'];
-        $newScore = $oldScore - $roundsum;
-
         $bust = false;
         $bust_message = '';
         $winner = null;
+        $gameEnded = false;
 
-        if ($newScore < 0 || $newScore == 1) {
-            $bust = true;
-            $bust_message = 'Bust! Punkte werden zurückgesetzt.';
-        } elseif ($newScore == 0) {
-            $player['score'] = 0;
-            $winner = $player['name'];
-        } else {
-            $player['score'] = $newScore;
+        foreach ($throws as $throw) {
+            if ($gameEnded) break; // Stoppe nach Spielende
 
+            $points = (int)($throw['points'] ?? 0);
+            $multiplier = (int)($throw['multiplier'] ?? 1);
+            $val = $points * $multiplier;
+
+            if ($points === 0) {
+                $player['misses'] = ($player['misses'] ?? 0) + 1;
+            }
+
+            $newScore = $player['score'] - $val;
+
+            if ($newScore < 0 || $newScore == 1) {
+                $bust = true;
+                $bust_message = 'Bust! Punkte werden zurückgesetzt.';
+                break;
+            } elseif ($newScore == 0) {
+                $player['score'] = 0;
+                $player['darts'][] = $val;
+                $player['total_points'] += $val;
+                $player['total_darts']++;
+                $winner = $player['name'];
+                $gameEnded = true;
+                break;
+            } else {
+                $player['score'] = $newScore;
+                $player['darts'][] = $val;
+                $player['total_points'] += $val;
+                $player['total_darts']++;
+            }
+        }
+
+        // Wenn Bust: Punkte resetten (Score bleibt gleich, Darts nicht zählen)
+        if ($bust) {
+            $player['darts'] = array_slice($player['darts'], 0, -1 * count($throws)); // Entferne aktuelle Runde
+            $player['score'] = $game['players'][$current]['score']; // zurücksetzen
+            // Punkte und Darts aus dieser Runde rückgängig machen:
             foreach ($throws as $throw) {
                 $points = (int)($throw['points'] ?? 0);
                 $multiplier = (int)($throw['multiplier'] ?? 1);
                 $val = $points * $multiplier;
-
-                $player['darts'][] = $val;
-                $player['total_darts']++;
-                $player['total_points'] += $val;
+                $player['total_points'] -= $val;
             }
-
-            $startScore = $game['start_score'];
-            $scoredPoints = $startScore - $player['score'];
-            $throwsCount = $player['total_darts'];
-
-            $player['average'] = $throwsCount > 0
-                ? round(($scoredPoints / $throwsCount) * 3, 1)
-                : 0;
+            // Darts auch zurück?
+            $player['total_darts'] -= count(array_filter($throws, fn($t) => ($t['points'] ?? 0) > 0));
         }
+
+        // Durchschnitt neu berechnen
+        $startScore = $game['start_score'];
+        $scoredPoints = $startScore - $player['score'];
+        $throwsCount = $player['total_darts'];
+        $player['average'] = $throwsCount > 0
+            ? round(($scoredPoints / $throwsCount) * 3, 1)
+            : 0;
 
         $game['throw_time'] = now();
         $game['bust'] = $bust;
         $game['bust_message'] = $bust_message;
         $game['winner'] = $winner;
 
-        // ⬇️ Checkout-Hilfe (neu berechnen nach Zug)
+        // Checkout-Hilfe aktualisieren
         $checkoutTable = include(app_path('CheckoutTable.php'));
         $game['checkout_tip'] = $checkoutTable[$player['score']] ?? null;
 
+        // Zeit speichern
         if ($request->has('final_duration') && $winner) {
             $game['final_duration'] = $request->input('final_duration');
         }
 
+        // Spieler wechseln
         if (!$winner) {
             $game['current'] = ($game['current'] + 1) % count($game['players']);
         }

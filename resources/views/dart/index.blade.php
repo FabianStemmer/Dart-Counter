@@ -15,6 +15,7 @@
     </form>
 
     <div class="dart-flex-wrapper" style="display:flex; gap:2rem; margin-top:1em;">
+
         <!-- Linke Spalte -->
         <div class="dart-leftcol" style="flex:1;">
             <div id="winner-container" style="margin-bottom:1em;">
@@ -39,17 +40,22 @@
             <h2>Punktestände</h2>
             <table style="width:100%; border-collapse: collapse;">
                 <thead>
-                  <tr>
-                      <th>Name</th><th style="text-align:right;">Punkte</th><th style="text-align:right;">Darts</th><th style="text-align:right;">Ø</th>
-                  </tr>
+                    <tr>
+                        <th>Name</th>
+                        <th style="text-align:right;">Punkte</th>                                           
+                        <th style="text-align:right;">Darts</th>
+                        <th style="text-align:right;">❌ Misses</th>
+                        <th style="text-align:right;">Ø</th>
+                    </tr>
                 </thead>
                 <tbody>
                     @foreach($game['players'] as $i => $player)
                         <tr class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
                             <td>{{ $player['name'] }}</td>
                             <td style="text-align:right;" id="score-{{ $i }}">{{ $player['score'] }}</td>
-                            <td style="text-align:right;">{{ $player['total_darts'] ?? 0 }}</td>
-                            <td style="text-align:right;">{{ $player['average'] ?? 0 }}</td>
+                            <td style="text-align:right;" id="darts-{{ $i }}">{{ $player['total_darts'] ?? 0 }}</td>
+                            <td style="text-align:right;" id="misses-{{ $i }}">{{ $player['misses'] ?? 0 }}</td>
+                            <td style="text-align:right;" id="average-{{ $i }}">{{ $player['average'] ?? 0 }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -135,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newScore = initialScore - sum;
         document.getElementById('score-' + currentPlayer).textContent = newScore;
 
+        // Checkout Hilfe
         let checkoutDiv = document.getElementById('checkout-help');
         if (!checkoutDiv) {
             checkoutDiv = document.createElement('div');
@@ -146,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (ref) ref.insertAdjacentElement('afterend', checkoutDiv);
             else document.body.appendChild(checkoutDiv);
         }
+
         const tip = window.checkoutTable?.[newScore];
         checkoutDiv.innerHTML = tip ? `<strong>Checkout-Hilfe:</strong> ${tip.join(' – ')}` : '';
 
@@ -165,6 +173,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         resultDiv.innerHTML = message;
 
+        // Live Update: Darts + Average
+        const player = @json($game['players'][$game['current']]);
+        const previousDarts = player.total_darts || 0;
+        const previousPoints = player.total_points || 0;
+        const dartsThisRound = throwData.slice(0, currentThrow).length;
+        const totalDarts = previousDarts + dartsThisRound;
+        const totalPoints = previousPoints + sum;
+        const average = totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0;
+        const missesThisRound = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
+        const previousMisses = player.misses || 0;
+        const totalMisses = previousMisses + missesThisRound;             
+
+        document.getElementById('darts-' + currentPlayer).textContent = totalDarts;
+        document.getElementById('average-' + currentPlayer).textContent = average.toFixed(1);
+        document.getElementById('misses-' + currentPlayer).textContent = totalMisses;        
+
+        // Weiter-Button zeigen
         document.getElementById('next-btn').style.display =
             (!winner && ((newScore === 0 || (newScore < 2 && newScore !== 0)) || currentThrow === 3))
             ? 'inline-block' : 'none';
