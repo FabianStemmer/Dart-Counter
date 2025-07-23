@@ -1,7 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+
+<div style="height: 100px;"></div>
+
+<div id="div_setup" class="container">
     <h1>Dartspiel Setup</h1>
 
     @php

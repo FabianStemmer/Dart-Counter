@@ -1,149 +1,378 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="utf-8">
-    <title>Sophiensaele Dart Zähler</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <title>Sophiensaele Dart Zähler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- SimpleCSS Baseline Design -->
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
-
-    <style>
-    /* Container mittig und mit begrenzter Breite */
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 1em;
+  <style>
+    /* ========== Basic Reset ========== */
+    *, *::before, *::after {
+      box-sizing: border-box;
     }
 
-    /* Flex-Wrapper für Statistik + Eingabe */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, Calibri, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #222;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    h1, h2, h3 {
+      font-weight: bold;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+
+    a {
+      color: dodgerblue;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* ========== Formulare ========== */
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    textarea,
+    select {
+      width: 100%;
+      max-width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    button,
+    input[type="submit"],
+    input[type="button"] {
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover,
+    input[type="submit"]:hover,
+    input[type="button"]:hover {
+      background-color: #e0e0e0;
+    }
+
+    /* ========== Tabellen ========== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1em;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    /* Container mittig und mit begrenzter Breite */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1em;
+      flex-shrink: 0;
+    }
+
+    /* Flex-Wrapper für Statistik + Eingabe: alt, kann in Zukunft raus */
     .dart-flex-wrapper {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        flex-wrap: nowrap;
-        gap: 2em;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      flex-wrap: nowrap;
+      gap: 2em;
     }
 
     /* Linke Spalte: Statistik */
     .dart-leftcol {
-        flex: 1 1 350px;
-        min-width: 250px;
-        max-width: 400px;
-        margin-left: 0;
-        padding-left: 0.5em;
-        background: #f9f9f9;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      flex: 1 1 350px;
+      min-width: 250px;
+      max-width: 400px;
+      margin-left: 0;
+      padding-left: 0.5em;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
 
     /* Rechte Spalte: Eingabe */
     .dart-rightcol {
-        flex: 2 1 600px;
-        min-width: 300px;
-        max-width: 800px;
+      flex: 2 1 600px;
+      min-width: 300px;
+      max-width: 800px;
     }
 
     /* Dartboard als Grid */
     .dart-board {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 12px;
-        margin-bottom: 1em;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 1em;
     }
 
     /* Dart-Buttons */
     .dart-btn {
-        width: 100%;
-        height: 100%;
-        min-width: 70px;
-        min-height: 70px;
-        font-size: 1.7em;
-        border-radius: 10px;
-        border: 2px solid #222;
-        background: #f5f5f5;
-        cursor: pointer;
-        transition: background 0.2s;
-        box-sizing: border-box;
-        color: black;
+      width: 100%;
+      height: 100%;
+      min-width: 70px;
+      min-height: 70px;
+      font-size: 1.7em;
+      border-radius: 10px;
+      border: 2px solid #222;
+      background: #f5f5f5;
+      cursor: pointer;
+      transition: background 0.2s;
+      box-sizing: border-box;
+      color: black;
     }
 
     .dart-btn:hover {
-        background-color: #ddd;
+      background-color: #ddd;
     }
 
     .dart-btn.spin {
-        animation: dart-spin 0.6s ease-in-out;
+      animation: dart-spin 0.6s ease-in-out;
     }
 
     @keyframes dart-spin {
-        0% { transform: rotate(0deg) scale(1); }
-        50% { transform: rotate(360deg) scale(1.1); }
-        100% { transform: rotate(720deg) scale(1); }
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(360deg) scale(1.1); }
+      100% { transform: rotate(720deg) scale(1); }
     }
 
     .miss-btn {
-        grid-column: span 2; /* ⬅️ Macht den Miss Button breiter */
-        font-weight: bold;
-        background-color: #f88;
+      grid-column: span 2;
+      font-weight: bold;
+      background-color: #f88;
     }
 
     /* Ausgewählter Button & Multiplier */
     .dart-btn.selected {
-        background: #8ecae6;
+      background: #8ecae6;
     }
+
     .multiplier-btn {
-        background: #ffd166;
+      background: #ffd166;
     }
 
     /* Aktiver Spieler hervorheben */
     .player-row.active {
-        font-weight: bold;
-        background: #caf0f8;
+      font-weight: bold;
+      background: #caf0f8;
     }
 
     /* Timer */
     .timer {
-        font-size: 1.3em;
-        margin-top: 1em;
+      font-size: 1.3em;
+      margin-top: 1em;
     }
 
     /* Bust Message optisch hervorgehoben */
     .bust-message {
-        color: red;
-        font-weight: bold;
-        font-size: 1.5em;
-        margin-top: 1em;
+      color: red;
+      font-weight: bold;
+      font-size: 1.5em;
+      margin-top: 1em;
+    }
+
+    /* Neue Layout-Stile (aus deinem aktuellen Design) */
+    html, body {
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      font-family: Calibri, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #fff;
+    }
+
+    #wrapper_div {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 80%;
+      margin: auto;
+    }
+
+    #div_Titel,
+    #div_Spieler {
+      padding: 10px 2%;
+      text-align: center;
+      flex-shrink: 0;
+      margin-bottom: 10px;
+    }
+
+    #div_Titel {
+      height: 50px;
+      line-height: 30px;
+      font-weight: bold;
+      font-size: 50px;
+    }
+
+    #div_Spieler {
+      height: 50px;
+      line-height: 30px;
+      font-size: 35px;
+    }
+
+    #div_Parent_Hauptfenster {
+      flex: 1;
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    #div_Daten,
+    #div_Eingabe {
+      text-align: center;
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #div_Punktebereich {
+      flex: 1;
+      min-height: 400px;
+      max-height: 400px;    /* hier z.B. maximale Höhe einstellen */
+      overflow-y: auto;     /* bei Überlauf vertikal scrollen */
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+
+    .info-row {
+      height: 40px;
+      margin-bottom: 5px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 28px;
+    }
+
+    .info-row:last-of-type {
+      margin-bottom: 0;
+    }
+
+    #div_Hauptfenster_Trennung {
+      width: 5%;
+      color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    #div_footer {
+      height: 20px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      border-top: 1px solid #bbb;
+    }
+
+    #footer_left,
+    #footer_center,
+    #footer_right {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #footer_left {
+      text-align: left;
+    }
+
+    #footer_center {
+      text-align: center;
+    }
+
+    #footer_right {
+      text-align: right;
+    }
+
+    .zeitdauer {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 10px; /* optional: etwas Abstand zwischen den beiden */
+      box-sizing: border-box;
+      overflow: hidden; /* Scrollbalken verhindern */
+    }
+
+    #uhrzeit,
+    #spieldauer {
+      flex-shrink: 1; /* erlaubt Schrumpfen falls nötig */
+      flex-grow: 0;
+      flex-basis: 48%; /* fast je die Hälfte, damit sie nebeneinander passen */
+      white-space: nowrap; /* keine Umbrüche */
+      overflow: hidden; /* Inhalt wird abgeschnitten falls zu lang */
+      text-overflow: ellipsis; /* Überflüssiger Text wird mit "..." gekürzt */
     }
 
     /* Mobile Optimierung */
     @media (max-width: 900px) {
-        .dart-flex-wrapper {
-            flex-direction: column;
-            gap: 1.5em;
-        }
+      .dart-flex-wrapper {
+        flex-direction: column;
+        gap: 1.5em;
+      }
 
-        .dart-leftcol,
-        .dart-rightcol {
-            max-width: 100%;
-            min-width: auto;
-        }
+      .dart-leftcol,
+      .dart-rightcol {
+        max-width: 100%;
+        min-width: auto;
+      }
+
+      /* Für neues Layout responsiv */
+      #div_Parent_Hauptfenster {
+        flex-direction: column;
+      }
     }
-    </style>
+  </style>
 </head>
+
 <body>
 
-    {{-- Hauptinhalt --}}
-    @yield('content')
+  {{-- Hauptinhalt --}}
+  @yield('content')
 
-    {{-- Footer --}}
-    <footer style="text-align: center; font-size: 0.8em; color: #888; margin-top: 60px;">
-        &copy; 2025 Stemmer Software Systems Engineering
-    </footer>
-
-    {{-- Skripte einbinden --}}
-    @yield('scripts')
+  {{-- Skripte --}}
+  @yield('scripts')
 
 </body>
 </html>
-

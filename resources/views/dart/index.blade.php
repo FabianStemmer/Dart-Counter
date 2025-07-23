@@ -1,83 +1,105 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container" style="max-width: 1400px;">
+<div id="wrapper_div">
 
-    <!-- Header -->
-    <div class="header-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1em;">
-        <div><h1>Sophiensaele Dart Counter</h1></div>
-        <div><h2>Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span></h2></div>
+    {{-- Header --}}
+    <div id="div_Titel"><img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 60px; vertical-align: middle; margin-right: 10px;">Dart Counter</div>
+
+    {{-- Aktueller Spieler --}}
+    <div id="div_Spieler">
+        Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
     </div>
 
-    <form method="POST" action="{{ route('dart.reset') }}">
-        @csrf
-        <button type="submit">Spiel zurücksetzen</button>
-    </form>
+    {{-- Hauptbereich: Zwei-Spalten-Layout --}}
+    <div id="div_Parent_Hauptfenster">
 
-    <div class="dart-flex-wrapper" style="display:flex; gap:2rem; margin-top:1em;">
+        {{-- Linke Spalte: Punktebereich + Infos --}}
+        <div id="div_Daten">
 
-        <!-- Linke Spalte -->
-        <div class="dart-leftcol" style="flex:1;">
-            <div id="winner-container" style="margin-bottom:1em;">
+            {{-- Punkteübersicht --}}
+            <div id="div_Punktebereich">
+
+                {{-- Gewinnmeldung --}}
                 @if ($game['winner'])
-                    <h2 class="winner-headline">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</h2>
-                    <form method="POST" action="{{ route('dart.newround') }}">
+                    <div class="winner-headline">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</div>
+                    <form method="POST" action="{{ route('dart.newround') }}" style="margin-top: 1rem;">
                         @csrf
-                        <button type="submit" class="btn btn-success">Neue Runde mit den gleichen Spielern</button>
+                        <button type="submit">Neue Runde mit den gleichen Spielern</button>
                     </form>
+                @endif
+
+                {{-- Punktetabelle --}}
+                <h2 style="margin-top: 1rem;">Punktestände</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th style="text-align:right;">Punkte</th>
+                            <th style="text-align:right;">Darts</th>
+                            <th style="text-align:right;">❌ Misses</th>
+                            <th style="text-align:right;">Ø</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($game['players'] as $i => $player)
+                            <tr class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
+                                <td>{{ $player['name'] }}</td>
+                                <td style="text-align:right;" id="score-{{ $i }}">{{ $player['score'] }}</td>
+                                <td style="text-align:right;" id="darts-{{ $i }}">{{ $player['total_darts'] ?? 0 }}</td>
+                                <td style="text-align:right;" id="misses-{{ $i }}">{{ $player['misses'] ?? 0 }}</td>
+                                <td style="text-align:right;" id="average-{{ $i }}">{{ $player['average'] ?? 0 }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+                {{-- Bust-Hinweis --}}
+                @if ($game['bust'])
+                    <div class="bust-message">{{ $game['bust_message'] }}</div>
                 @endif
             </div>
 
-            @if($game['checkout_tip'] ?? false)
-                <div style="margin:1em 0; font-size:1.2em; color:#232;">
-                    <strong>Checkout-Hilfe:</strong>
-                    @foreach($game['checkout_tip'] as $step)
-                        {{ $step }}{{ !$loop->last ? ' – ' : '' }}
-                    @endforeach
-                </div>
-            @endif
+            {{-- Wurfanzeige --}}
+            <div class="info-row">
+                Aktuelle Würfe:
+                <span>
+                    <span id="wurf0display">–</span> /
+                    <span id="wurf1display">–</span> /
+                    <span id="wurf2display">–</span>
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <strong>Summe:</strong> <span id="roundsum">0</span>
+                </span>
+            </div>
 
-            <h2>Punktestände</h2>
-            <table style="width:100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th style="text-align:right;">Punkte</th>                                           
-                        <th style="text-align:right;">Darts</th>
-                        <th style="text-align:right;">❌ Misses</th>
-                        <th style="text-align:right;">Ø</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($game['players'] as $i => $player)
-                        <tr class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
-                            <td>{{ $player['name'] }}</td>
-                            <td style="text-align:right;" id="score-{{ $i }}">{{ $player['score'] }}</td>
-                            <td style="text-align:right;" id="darts-{{ $i }}">{{ $player['total_darts'] ?? 0 }}</td>
-                            <td style="text-align:right;" id="misses-{{ $i }}">{{ $player['misses'] ?? 0 }}</td>
-                            <td style="text-align:right;" id="average-{{ $i }}">{{ $player['average'] ?? 0 }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            {{-- Checkout-Hilfe --}}
+            <div class="info-row">
+                Checkout-Hilfe:
+                <span id="checkoutHilfe">–</span>
+            </div>
 
-            @if ($game['bust'])
-                <div class="bust-message">{{ $game['bust_message'] }}</div>
-            @endif
-
-            <div id="timer" class="timer">Spieldauer: 00:00.00</div>
+            {{-- Uhrzeit + Dauer --}}
+            <div class="info-row zeitdauer">
+                <div id="uhrzeit">Uhrzeit: 00:00:00</div>
+                <div id="spieldauer">Dauer: 00:00</div>
+            </div>
         </div>
 
-        <!-- Rechte Spalte -->
-        <div class="dart-rightcol" style="flex:1;">
+        {{-- Spaltentrenner --}}
+        <div id="div_Hauptfenster_Trennung"></div>
+
+        {{-- Rechte Spalte: Dartboard und Eingabe --}}
+        <div id="div_Eingabe">
             <form id="dart-form" method="POST" action="{{ route('dart.throw') }}" @if($game['winner']) style="display:none;" @endif>
                 @csrf
                 <input type="hidden" name="final_duration" id="final_duration" value="">
+
                 @for ($i = 0; $i < 3; $i++)
                     <input type="hidden" name="throws[{{ $i }}][points]" id="points{{ $i }}" value="0">
                     <input type="hidden" name="throws[{{ $i }}][multiplier]" id="multiplier{{ $i }}" value="1">
                 @endfor
 
+                {{-- Dartboard --}}
                 <div class="dart-board">
                     @for($i = 1; $i <= 20; $i++)
                         <button type="button" class="dart-btn" data-value="{{ $i }}">{{ $i }}</button>
@@ -87,36 +109,50 @@
                     <button type="button" class="dart-btn miss-btn" data-value="0">Miss</button>
                 </div>
 
+                {{-- Multiplier-Buttons + Zurück --}}
                 <div style="margin-bottom: 1em;">
                     <button type="button" class="dart-btn multiplier-btn" data-mul="2">Double</button>
                     <button type="button" class="dart-btn multiplier-btn" data-mul="3">Triple</button>
                     <button type="button" class="dart-btn" id="reset-btn">Letzten Wurf zurück</button>
                 </div>
 
-                <div style="display:flex; justify-content:space-between;">
-                    <div>
-                        Wurf 1: <span id="wurf0display">-</span> /
-                        Wurf 2: <span id="wurf1display">-</span> /
-                        Wurf 3: <span id="wurf2display">-</span><br>
-                        <strong>Rundensumme: <span id="roundsum">0</span></strong>
-                    </div>
+                {{-- Weiter --}}
+                <div style="display:flex; justify-content:end;">
                     <button type="button" id="next-btn" style="display:none;">Weiter</button>
                 </div>
             </form>
+
+            {{-- Rücksetzen --}}
+            <form method="POST" action="{{ route('dart.reset') }}" style="margin-top: 1em;">
+                @csrf
+                <button type="submit">Spiel zurücksetzen</button>
+            </form>
         </div>
+
     </div>
+
+    {{-- Footer --}}
+    <div id="div_footer">
+        <div id="footer_left">Version 0.5 (Beta)</div>
+        <div id="footer_center">© 2025 Stemmer Software Systems Engineering</div>
+        <div id="footer_right">Build 1826.20250723</div>
+    </div>
+
 </div>
 @endsection
 
+@section('scripts')
+{{-- Checkout table --}}
 <script>
 window.checkoutTable = @json(include(app_path('CheckoutTable.php')));
 </script>
 
-@section('scripts')
+{{-- Hauptlogik --}}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const winner = @json($game['winner'] ? true : false);
     const finalDuration = @json($game['final_duration'] ?? null);
+    const startTime = new Date("{{ \Carbon\Carbon::parse($game['start_time'])->toIso8601String() }}");
 
     let initialScore = {{ $game['players'][$game['current']]['score'] }};
     let currentPlayer = {{ $game['current'] }};
@@ -128,68 +164,47 @@ document.addEventListener('DOMContentLoaded', () => {
         let sum = 0;
         for(let i = 0; i < 3; i++) {
             let val = throwData[i].points * throwData[i].multiplier;
-            document.getElementById('wurf'+i+'display').textContent =
+            document.getElementById('wurf' + i + 'display').textContent =
                 (currentThrow > i || throwData[i].points > 0) ?
-                (throwData[i].points + (throwData[i].multiplier > 1 ? 'x'+throwData[i].multiplier : '')) :
-                '-';
+                (throwData[i].points + (throwData[i].multiplier > 1 ? 'x'+throwData[i].multiplier : '')) : '–';
             sum += val;
-            document.getElementById('points'+i).value = throwData[i].points;
-            document.getElementById('multiplier'+i).value = throwData[i].multiplier;
+            document.getElementById('points' + i).value = throwData[i].points;
+            document.getElementById('multiplier' + i).value = throwData[i].multiplier;
         }
 
         document.getElementById('roundsum').textContent = sum;
         const newScore = initialScore - sum;
         document.getElementById('score-' + currentPlayer).textContent = newScore;
 
-        // Checkout Hilfe
-        let checkoutDiv = document.getElementById('checkout-help');
-        if (!checkoutDiv) {
-            checkoutDiv = document.createElement('div');
-            checkoutDiv.id = 'checkout-help';
-            checkoutDiv.style.margin = '1em 0';
-            checkoutDiv.style.fontSize = '1.2em';
-            checkoutDiv.style.color = '#232';
-            const ref = document.querySelector('.dart-leftcol h2');
-            if (ref) ref.insertAdjacentElement('afterend', checkoutDiv);
-            else document.body.appendChild(checkoutDiv);
-        }
-
         const tip = window.checkoutTable?.[newScore];
-        checkoutDiv.innerHTML = tip ? `<strong>Checkout-Hilfe:</strong> ${tip.join(' – ')}` : '';
+        document.getElementById('checkoutHilfe').textContent = tip ? tip.join(' – ') : '–';
 
         let message = '';
-        if (newScore < 2 && newScore !== 0) message = "🚫 Bust! Bitte prüfen und <b>Weiter</b> klicken.";
-        if (newScore === 0) message = "🎉 Gewonnen! Bitte prüfen und <b>Weiter</b> klicken.";
+        if (newScore < 2 && newScore !== 0) message = "🚫 Bust! Bitte prüfen und Weiter klicken.";
+        if (newScore === 0) message = "🎉 Gewonnen! Bitte prüfen und Weiter klicken.";
 
-        let resultDiv = document.getElementById('result-hint');
-        if (!resultDiv) {
-            resultDiv = document.createElement('div');
-            resultDiv.id = 'result-hint';
-            resultDiv.style.margin = '10px 0';
-            resultDiv.style.fontWeight = 'bold';
-            resultDiv.style.fontSize = '1.2em';
-            resultDiv.style.color = '#900';
-            document.getElementById('winner-container').appendChild(resultDiv);
+        let resultHint = document.getElementById('result-hint');
+        if (!resultHint && message) {
+            resultHint = document.createElement('div');
+            resultHint.id = 'result-hint';
+            resultHint.classList.add('bust-message');
+            document.querySelector('#div_Punktebereich').appendChild(resultHint);
         }
-        resultDiv.innerHTML = message;
+        if (resultHint) resultHint.innerHTML = message;
 
-        // Live Update: Darts + Average
         const player = @json($game['players'][$game['current']]);
-        const previousDarts = player.total_darts || 0;
-        const previousPoints = player.total_points || 0;
         const dartsThisRound = throwData.slice(0, currentThrow).length;
-        const totalDarts = previousDarts + dartsThisRound;
-        const totalPoints = previousPoints + sum;
+        const sumMisses = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
+
+        const totalDarts = (player.total_darts || 0) + dartsThisRound;
+        const totalPoints = (player.total_points || 0) + sum;
+        const totalMisses = (player.misses || 0) + sumMisses;
         const average = totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0;
-        const missesThisRound = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
-        const previousMisses = player.misses || 0;
-        const totalMisses = previousMisses + missesThisRound;             
 
         document.getElementById('darts-' + currentPlayer).textContent = totalDarts;
         document.getElementById('average-' + currentPlayer).textContent = average.toFixed(1);
-        document.getElementById('misses-' + currentPlayer).textContent = totalMisses;        
+        document.getElementById('misses-' + currentPlayer).textContent = totalMisses;
 
-        // Weiter-Button zeigen
         document.getElementById('next-btn').style.display =
             (!winner && ((newScore === 0 || (newScore < 2 && newScore !== 0)) || currentThrow === 3))
             ? 'inline-block' : 'none';
@@ -200,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentThrow < 3) {
                 btn.classList.add('spin');
                 setTimeout(() => btn.classList.remove('spin'), 600);
-
                 throwData[currentThrow] = {
                     points: parseInt(btn.dataset.value),
                     multiplier: multiplier
@@ -231,23 +245,27 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('next-btn').onclick = () => {
-        document.getElementById('final_duration').value = document.getElementById('timer').textContent.replace('Spieldauer: ', '');
+        document.getElementById('final_duration').value =
+            document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
         document.getElementById('dart-form').submit();
     };
 
-    const startTime = new Date("{{ \Carbon\Carbon::parse($game['start_time'])->toIso8601String() }}");
-    const timer = document.getElementById('timer');
+    // Uhrzeit & Daueranzeige aktualisieren
     setInterval(() => {
+        const now = new Date();
+        const uhr = now.toLocaleTimeString('de-DE');
+        document.getElementById('uhrzeit').textContent = "Uhrzeit: " + uhr;
+
         if (winner && finalDuration) {
-            timer.textContent = 'Spieldauer: ' + finalDuration;
+            document.getElementById('spieldauer').textContent = 'Dauer: ' + finalDuration;
             return;
         }
-        const ms = new Date() - startTime;
+
+        const ms = now - startTime;
         const min = Math.floor(ms / 60000);
         const sec = Math.floor((ms % 60000) / 1000);
-        const msec = Math.floor((ms % 1000) / 10);
-        timer.textContent = `Spieldauer: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${String(msec).padStart(2,'0')}`;
-    }, 10);
+        document.getElementById('spieldauer').textContent = `Dauer: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    }, 1000);
 
     updateDisplay();
 });
