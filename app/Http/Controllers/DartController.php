@@ -28,6 +28,9 @@ class DartController extends Controller
             'start_time' => now(),
             'throw_time' => now(),
             'round_darts' => [],
+            'round_start_scores' => [],      // Startscore der aktuellen Runde pro Spieler
+            'round_start_points' => [],      // total_points vor Runde
+            'round_start_darts' => [],       // total_darts vor Runde
         ];
 
         foreach ($players as $player) {
@@ -38,6 +41,8 @@ class DartController extends Controller
                 'total_darts' => 0,
                 'total_points' => 0,
                 'average' => 0,
+                'average_1dart' => 0,
+                'legs' => 0,
                 'misses' => 0,
             ];
         }
@@ -74,8 +79,15 @@ class DartController extends Controller
         $winner = null;
         $gameEnded = false;
 
+        // Startwerte der Runde merken, falls noch nicht gesetzt
+        if (!isset($game['round_start_scores'][$current])) {
+            $game['round_start_scores'][$current] = $player['score'];
+            $game['round_start_points'][$current] = $player['total_points'];
+            $game['round_start_darts'][$current] = $player['total_darts'];
+        }
+
         foreach ($throws as $throw) {
-            if ($gameEnded) break; // Stoppe nach Spielende
+            if ($gameEnded) break;
 
             $points = (int)($throw['points'] ?? 0);
             $multiplier = (int)($throw['multiplier'] ?? 1);
@@ -92,6 +104,7 @@ class DartController extends Controller
                 $bust_message = 'Bust! Punkte werden zurückgesetzt.';
                 break;
             } elseif ($newScore == 0) {
+                $player['legs'] = ($player['legs'] ?? 0) + 1;
                 $player['score'] = 0;
                 $player['darts'][] = $val;
                 $player['total_points'] += $val;
@@ -107,28 +120,29 @@ class DartController extends Controller
             }
         }
 
-        // Wenn Bust: Punkte resetten (Score bleibt gleich, Darts nicht zählen)
         if ($bust) {
-            $player['darts'] = array_slice($player['darts'], 0, -1 * count($throws)); // Entferne aktuelle Runde
-            $player['score'] = $game['players'][$current]['score']; // zurücksetzen
-            // Punkte und Darts aus dieser Runde rückgängig machen:
-            foreach ($throws as $throw) {
-                $points = (int)($throw['points'] ?? 0);
-                $multiplier = (int)($throw['multiplier'] ?? 1);
-                $val = $points * $multiplier;
-                $player['total_points'] -= $val;
-            }
-            // Darts auch zurück?
-            $player['total_darts'] -= count(array_filter($throws, fn($t) => ($t['points'] ?? 0) > 0));
+            // Bei Bust: Punkte auf Start der Runde zurücksetzen
+            $player['score'] = $game['round_start_scores'][$current];
+
+            // Punkte und Darts ebenfalls auf Anfang der Runde zurücksetzen
+            $player['total_points'] = $game['round_start_points'][$current];
+            $player['total_darts'] = $game['round_start_darts'][$current];
+
+            // Darts-Array bleibt unverändert, geworfene Pfeile bleiben sichtbar
+        } else {
+            // Runde regulär abgeschlossen, Startwerte löschen
+            unset($game['round_start_scores'][$current]);
+            unset($game['round_start_points'][$current]);
+            unset($game['round_start_darts'][$current]);
         }
 
-        // Durchschnitt neu berechnen
+        // Durchschnitt (Average) aktualisieren
         $startScore = $game['start_score'];
         $scoredPoints = $startScore - $player['score'];
         $throwsCount = $player['total_darts'];
-        $player['average'] = $throwsCount > 0
-            ? round(($scoredPoints / $throwsCount) * 3, 1)
-            : 0;
+
+        $player['average'] = $throwsCount > 0 ? round(($scoredPoints / $throwsCount) * 3, 1) : 0;
+        $player['average_1dart'] = $throwsCount > 0 ? round($scoredPoints / $throwsCount, 1) : 0;
 
         $game['throw_time'] = now();
         $game['bust'] = $bust;
@@ -139,12 +153,11 @@ class DartController extends Controller
         $checkoutTable = include(app_path('CheckoutTable.php'));
         $game['checkout_tip'] = $checkoutTable[$player['score']] ?? null;
 
-        // Zeit speichern
         if ($request->has('final_duration') && $winner) {
             $game['final_duration'] = $request->input('final_duration');
         }
 
-        // Spieler wechseln
+        // Spieler wechseln, wenn kein Gewinner
         if (!$winner) {
             $game['current'] = ($game['current'] + 1) % count($game['players']);
         }
@@ -169,6 +182,9 @@ class DartController extends Controller
 
         $players = $game['players'];
 
+        // Nächster Starter rotiert (modulo Spielerzahl)
+        $nextStart = ($game['current'] + 1) % count($players);
+
         $newGame = [
             'players' => array_map(function ($p) use ($game) {
                 return [
@@ -178,9 +194,12 @@ class DartController extends Controller
                     'total_darts' => 0,
                     'total_points' => 0,
                     'average' => 0,
+                    'average_1dart' => 0,
+                    'legs' => $p['legs'] ?? 0,
+                    'misses' => 0,
                 ];
             }, $players),
-            'current' => 0,
+            'current' => $nextStart,
             'start_score' => $game['start_score'] ?? 501,
             'bust' => false,
             'bust_message' => '',
@@ -188,6 +207,9 @@ class DartController extends Controller
             'start_time' => now(),
             'throw_time' => now(),
             'round_darts' => [],
+            'round_start_scores' => [],
+            'round_start_points' => [],
+            'round_start_darts' => [],
         ];
 
         Session::put('dart_game', $newGame);

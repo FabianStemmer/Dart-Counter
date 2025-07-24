@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+
 @section('content')
 <div id="wrapper_div">
 
@@ -29,35 +30,36 @@
                     </form>
                 @endif
 
+
                 {{-- Punktetabelle --}}
                 <h2 style="margin-top: 1rem;">Punktestände</h2>
                 <table>
                     <thead>
                         <tr>
                             <th>Name</th>
+                            <th style="text-align:right;">Legs</th> {{-- Neue Spalte Legs --}}
                             <th style="text-align:right;">Punkte</th>
                             <th style="text-align:right;">Darts</th>
                             <th style="text-align:right;">❌ Misses</th>
-                            <th style="text-align:right;">Ø</th>
+                            <th style="text-align:right;">Ø (3 Dart)</th>
+                            <th style="text-align:right;">Ø (1 Dart)</th> {{-- Neue Spalte 1-Dart Durchschnitt --}}
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($game['players'] as $i => $player)
                             <tr class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
                                 <td>{{ $player['name'] }}</td>
+                                <td style="text-align:right;" id="legs-{{ $i }}">{{ $player['legs'] ?? 0 }}</td>
                                 <td style="text-align:right;" id="score-{{ $i }}">{{ $player['score'] }}</td>
                                 <td style="text-align:right;" id="darts-{{ $i }}">{{ $player['total_darts'] ?? 0 }}</td>
                                 <td style="text-align:right;" id="misses-{{ $i }}">{{ $player['misses'] ?? 0 }}</td>
                                 <td style="text-align:right;" id="average-{{ $i }}">{{ $player['average'] ?? 0 }}</td>
+                                <td style="text-align:right;" id="average1dart-{{ $i }}">{{ $player['average_1dart'] ?? 0 }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
 
-                {{-- Bust-Hinweis --}}
-                @if ($game['bust'])
-                    <div class="bust-message">{{ $game['bust_message'] }}</div>
-                @endif
             </div>
 
             {{-- Wurfanzeige --}}
@@ -141,6 +143,7 @@
 </div>
 @endsection
 
+
 @section('scripts')
 {{-- Checkout table --}}
 <script>
@@ -192,18 +195,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (resultHint) resultHint.innerHTML = message;
 
-        const player = @json($game['players'][$game['current']]);
+        // Hole aktuellen Spieler vom Server-Game-Array, falls vorhanden
+        const players = @json($game['players']);
+        const player = players[currentPlayer];
+
         const dartsThisRound = throwData.slice(0, currentThrow).length;
         const sumMisses = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
 
         const totalDarts = (player.total_darts || 0) + dartsThisRound;
         const totalPoints = (player.total_points || 0) + sum;
         const totalMisses = (player.misses || 0) + sumMisses;
-        const average = totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0;
+        const average3dart = totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0;
+        const average1dart = totalDarts > 0 ? (totalPoints / totalDarts) : 0;
 
         document.getElementById('darts-' + currentPlayer).textContent = totalDarts;
-        document.getElementById('average-' + currentPlayer).textContent = average.toFixed(1);
+        document.getElementById('average-' + currentPlayer).textContent = average3dart.toFixed(1);
+        document.getElementById('average1dart-' + currentPlayer).textContent = average1dart.toFixed(1);
         document.getElementById('misses-' + currentPlayer).textContent = totalMisses;
+        document.getElementById('legs-' + currentPlayer).textContent = player.legs ?? 0;
 
         document.getElementById('next-btn').style.display =
             (!winner && ((newScore === 0 || (newScore < 2 && newScore !== 0)) || currentThrow === 3))
@@ -245,8 +254,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('next-btn').onclick = () => {
+        const resultHint = document.getElementById('result-hint');
+        if (resultHint) {
+            resultHint.remove();
+            }
         document.getElementById('final_duration').value =
-            document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
+        document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
         document.getElementById('dart-form').submit();
     };
 

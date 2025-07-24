@@ -55,8 +55,9 @@
         <div style="margin-top: 1em;">
             <label>Spielart:</label>
             <select name="game_type">
-                <option value="301">301</option>
-                <option value="501" selected>501</option>
+                <option value="11">11 (Debug)</option>
+                <option value="301" selected>301</option>
+                <option value="501">501</option>
             </select>
         </div>
 
