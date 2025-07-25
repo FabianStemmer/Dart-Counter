@@ -363,6 +363,90 @@
         flex-direction: column;
       }
     }
+
+    .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    background-color: #ccc;
+    border-radius: 24px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: 0.4s;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.4s;
+  }
+
+  input:checked + .slider {
+    background-color: #2196F3;
+  }
+
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(26px);
+  }
+  
+  .toggle-container {
+      display: flex;
+      align-items: center; /* Vertikale Zentrierung */
+      gap: 0.5em; /* Abstand zwischen Regler und Text */
+  }  
+
+  table {
+    width: 100%;
+    border-collapse: separate;        /* Wichtig: verhindert Überschreibung der Border-Radien */
+    border-spacing: 0;
+    border-radius: 18px;
+    overflow: hidden;                 /* für Safari/Firefox bei Border-Radius */
+    border: 3px solid #234;
+    box-shadow: 0 2px 10px rgba(50,50,50,0.08);
+  }
+
+  th, td {
+    border: 2px solid #234;
+    padding: 10px;
+  }
+
+  th:first-child, td:first-child {
+    border-left-width: 2px;
+  }
+
+  th:last-child, td:last-child {
+    border-right-width: 2px;
+  }
+
+  .moveup {
+    transition: transform 0.4s;
+    transform: translateY(-1.5em);
+  }  
   </style>
 </head>
 

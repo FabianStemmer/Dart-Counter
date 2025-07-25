@@ -1,11 +1,13 @@
 @extends('layouts.app')
 
-
 @section('content')
 <div id="wrapper_div">
 
     {{-- Header --}}
-    <div id="div_Titel"><img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 60px; vertical-align: middle; margin-right: 10px;">Dart Counter</div>
+    <div id="div_Titel">
+        <img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 60px; vertical-align: middle; margin-right: 10px;">
+        Dart Counter
+    </div>
 
     {{-- Aktueller Spieler --}}
     <div id="div_Spieler">
@@ -30,22 +32,24 @@
                     </form>
                 @endif
 
-
                 {{-- Punktetabelle --}}
-                <h2 style="margin-top: 1rem;">Punktestände</h2>
+                <h2 style="margin-top: 1rem;">
+                    Punktestände Leg {{ $game['legNumber'] ?? 1 }}, Runde {{ $game['roundNumber'] ?? 1 }}
+                </h2>
+
                 <table>
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th style="text-align:right;">Legs</th> {{-- Neue Spalte Legs --}}
+                            <th style="text-align:right;">Win</th>
                             <th style="text-align:right;">Punkte</th>
                             <th style="text-align:right;">Darts</th>
                             <th style="text-align:right;">❌ Misses</th>
                             <th style="text-align:right;">Ø (3 Dart)</th>
-                            <th style="text-align:right;">Ø (1 Dart)</th> {{-- Neue Spalte 1-Dart Durchschnitt --}}
+                            <th style="text-align:right;">Ø (1 Dart)</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="playerTableBody">
                         @foreach($game['players'] as $i => $player)
                             <tr class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
                                 <td>{{ $player['name'] }}</td>
@@ -59,7 +63,6 @@
                         @endforeach
                     </tbody>
                 </table>
-
             </div>
 
             {{-- Wurfanzeige --}}
@@ -78,6 +81,20 @@
             <div class="info-row">
                 Checkout-Hilfe:
                 <span id="checkoutHilfe">–</span>
+            </div>
+
+            <div class="toggle-container" style="margin-top: 1em; margin-bottom:1em; display: flex; align-items: center; gap: 1.5em;">
+                <label class="switch" style="margin: 0;">
+                    <input type="checkbox" id="doubleInToggle" name="doubleInToggle" @if(!empty($game['doubleInRequired'])) checked @endif>
+                    <span class="slider round"></span>
+                </label>
+                <span>Double In aktivieren</span>
+
+                <label class="switch" style="margin: 0;">
+                    <input type="checkbox" id="doubleOutToggle" name="doubleOutToggle" @if(!empty($game['doubleOutRequired'])) checked @endif>
+                    <span class="slider round"></span>
+                </label>
+                <span>Double Out aktivieren</span>
             </div>
 
             {{-- Uhrzeit + Dauer --}}
@@ -130,7 +147,6 @@
                 <button type="submit">Spiel zurücksetzen</button>
             </form>
         </div>
-
     </div>
 
     {{-- Footer --}}
@@ -142,7 +158,6 @@
 
 </div>
 @endsection
-
 
 @section('scripts')
 {{-- Checkout table --}}
@@ -257,11 +272,50 @@ document.addEventListener('DOMContentLoaded', () => {
         const resultHint = document.getElementById('result-hint');
         if (resultHint) {
             resultHint.remove();
-            }
+        }
         document.getElementById('final_duration').value =
         document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
         document.getElementById('dart-form').submit();
     };
+
+    const form = document.getElementById('dart-form');
+
+    const doubleInToggle = document.getElementById('doubleInToggle');
+    if (doubleInToggle && form) {
+        let hiddenDoubleIn = document.createElement('input');
+        hiddenDoubleIn.type = 'hidden';
+        hiddenDoubleIn.name = 'doubleInRequired';
+        hiddenDoubleIn.value = doubleInToggle.checked ? '1' : '0';
+        form.appendChild(hiddenDoubleIn);
+
+        doubleInToggle.addEventListener('change', () => {
+            hiddenDoubleIn.value = doubleInToggle.checked ? '1' : '0';
+        });
+    }
+
+    const doubleOutToggle = document.getElementById('doubleOutToggle');
+    if (doubleOutToggle && form) {
+        let hiddenDoubleOut = document.createElement('input');
+        hiddenDoubleOut.type = 'hidden';
+        hiddenDoubleOut.name = 'doubleOutRequired';
+        hiddenDoubleOut.value = doubleOutToggle.checked ? '1' : '0';
+        form.appendChild(hiddenDoubleOut);
+
+        doubleOutToggle.addEventListener('change', () => {
+            hiddenDoubleOut.value = doubleOutToggle.checked ? '1' : '0';
+        });
+    }
+
+    function moveActivePlayerToTop() {
+    const tbody = document.getElementById('playerTableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const active = rows.find(row => row.classList.contains('active'));
+    if (active && tbody.firstChild !== active) {
+        active.classList.add('moveup');
+        tbody.insertBefore(active, tbody.firstChild);
+        setTimeout(() => active.classList.remove('moveup'), 500);
+    }
+    }    
 
     // Uhrzeit & Daueranzeige aktualisieren
     setInterval(() => {
