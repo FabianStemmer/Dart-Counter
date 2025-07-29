@@ -5,13 +5,13 @@
 
     {{-- Header --}}
     <div id="div_Titel">
-        <img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 70px; vertical-align: middle; margin-right: 10px;">&nbsp;
-        Dart Counter
+        <img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 70px; vertical-align: middle; margin-right: 10px;">
+        &nbsp;Dart Counter
     </div>
 
     {{-- Aktueller Spieler --}}
     <div id="div_Spieler">
-        Wurf eingeben für: <span style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
+        Wurf eingeben für: <span id="currentPlayerName" style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
     </div>
 
     {{-- Hauptbereich: Zwei-Spalten-Layout --}}
@@ -20,53 +20,57 @@
         {{-- Linke Spalte: Punktebereich + Infos --}}
         <div id="div_Daten">
 
-        {{-- Anzeige Leg und Runde --}}
-        <h2 style="margin-top: 1rem;">
-            Leg {{ $game['legNumber'] ?? 1 }}, Runde {{ $game['roundNumber'] ?? 1 }}
-        </h2>
+            {{-- Gewinnmeldung (nur sichtbar wenn Gewinner gesetzt) --}}
+            @if ($game['winner'])
+            <div class="winner-headline" style="margin-bottom: 1rem; font-size: 1.25rem;">
+                🎉 {{ $game['winner'] }} hat gewonnen! 🎉
+            </div>
+            <form method="POST" action="{{ route('dart.newround') }}" style="margin-bottom: 1.5rem;">
+                @csrf
+                <button type="submit">Neue Runde mit den gleichen Spielern</button>
+            </form>
+            @endif
 
-            {{-- Punkteübersicht als Container mit Überschrift als eigene Reihe --}}
+            {{-- Anzeige Leg und Runde --}}
+            <h2 style="margin-top: 0; margin-bottom: 1rem;">
+                Leg {{ $game['legNumber'] ?? 1 }}, Runde {{ $game['roundNumber'] ?? 1 }}
+            </h2>
+
+            {{-- Punkteübersicht als Container --}}
             <div id="playerListContainer" style="border-radius: 18px; background: #f7f7fa; padding: 18px; max-height: 400px; overflow-y: auto;">
-                
+
                 {{-- Überschriften-Zeile --}}
-                <div class="player-row header" style="font-weight: bold; background: transparent; padding: 0 10px; margin-bottom: 12px; color: #234;">
-                    <div style="flex:2; text-align:left;">Name</div>
-                    <div style="flex:1; text-align:right;">Win</div>
-                    <div style="flex:1; text-align:right;">Punkte</div>
-                    <div style="flex:1; text-align:right;">Darts</div>
-                    <div style="flex:1; text-align:right;">❌ Misses</div>
-                    <div style="flex:1; text-align:right;">Ø (3 Dart)</div>
-                    <div style="flex:1; text-align:right;">Ø (1 Dart)</div>
+                <div class="player-row header">
+                    <div style="flex: 2; text-align:left; padding: 6px 12px;">Name</div>
+                    <div style="flex: 1; text-align:right; padding: 6px 12px;">Win</div>
+                    <div style="flex: 1; text-align:right; padding: 6px 12px;">Punkte</div>
+                    <div style="flex: 1; text-align:right; padding: 6px 12px;">Darts</div>
+                    <div style="flex: 1; text-align:right; padding: 6px 12px;">❌ Misses</div>
+                    <div style="flex: 1; text-align:right; padding: 6px 12px;">Ø (3 Dart)</div>
+                    <div style="flex: 1; text-align:right; padding: 6px 12px;">Ø (1 Dart)</div>
                 </div>
 
                 {{-- Spieler-Liste --}}
                 <div id="playerList">
                     @foreach($game['players'] as $i => $player)
-                        <div class="player-row @if($i == $game['current'] && !$game['winner']) active-player @endif"
-                             style="background:#fff; border-radius: 12px; margin-bottom: 16px; padding: 10px 18px; display: flex; gap: 12px; align-items: center;">
-                            <div style="flex: 2; font-weight: bold; text-align: left;">{{ $player['name'] }}</div>
-                            <div style="flex: 1; text-align: right;">{{ $player['legs'] ?? 0 }}</div>
-                            <div style="flex: 1; text-align: right;">{{ $player['score'] }}</div>
-                            <div style="flex: 1; text-align: right;">{{ $player['total_darts'] ?? 0 }}</div>
-                            <div style="flex: 1; text-align: right;">{{ $player['misses'] ?? 0 }}</div>
-                            <div style="flex: 1; text-align: right;">{{ number_format($player['average'] ?? 0, 2) }}</div>
-                            <div style="flex: 1; text-align: right;">{{ number_format($player['average_1dart'] ?? 0, 2) }}</div>
-                        </div>
+                    <div class="player-row @if($i == $game['current'] && !$game['winner']) active-player @endif" data-player-index="{{ $i }}">
+                        <div style="flex: 2; font-weight: bold; text-align: left; padding: 6px 12px;">{{ $player['name'] }}</div>
+                        <div class="player-legs" style="flex: 1; text-align: right; padding: 6px 12px;">{{ $player['legs'] ?? 0 }}</div>
+                        <div class="player-score" style="flex: 1; text-align: right; padding: 6px 12px;">{{ $player['score'] }}</div>
+                        <div class="player-darts" style="flex: 1; text-align: right; padding: 6px 12px;">{{ $player['total_darts'] ?? 0 }}</div>
+                        <div class="player-misses" style="flex: 1; text-align: right; padding: 6px 12px;">{{ $player['misses'] ?? 0 }}</div>
+                        <div class="player-average-3dart" style="flex: 1; text-align: right; padding: 6px 12px;">{{ number_format($player['average'] ?? 0, 2) }}</div>
+                        <div class="player-average-1dart" style="flex: 1; text-align: right; padding: 6px 12px;">{{ number_format($player['average_1dart'] ?? 0, 2) }}</div>
+                    </div>
                     @endforeach
                 </div>
+
+                {{-- Hinweis für Bust oder Gewinn (JS-Injection) --}}
+                <div id="result-hint-container" style="margin-top: 1rem;"></div>
             </div>
 
-            {{-- Gewinnmeldung --}}
-            @if ($game['winner'])
-                <div class="winner-headline">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</div>
-                <form method="POST" action="{{ route('dart.newround') }}" style="margin-top: 1rem;">
-                    @csrf
-                    <button type="submit">Neue Runde mit den gleichen Spielern</button>
-                </form>
-            @endif
-
             {{-- Wurfanzeige --}}
-            <div class="info-row">
+            <div class="info-row" style="margin-top: 1rem;">
                 Aktuelle Würfe:
                 <span>
                     <span id="wurf0display">–</span> /
@@ -78,7 +82,7 @@
             </div>
 
             {{-- Checkout-Hilfe --}}
-            <div class="info-row">
+            <div class="info-row" style="margin-top: 0.5rem;">
                 Checkout-Hilfe:
                 <span id="checkoutHilfe">–</span>
             </div>
@@ -114,14 +118,14 @@
                 <input type="hidden" name="final_duration" id="final_duration" value="">
 
                 @for ($i = 0; $i < 3; $i++)
-                    <input type="hidden" name="throws[{{ $i }}][points]" id="points{{ $i }}" value="0">
-                    <input type="hidden" name="throws[{{ $i }}][multiplier]" id="multiplier{{ $i }}" value="1">
+                <input type="hidden" name="throws[{{ $i }}][points]" id="points{{ $i }}" value="0">
+                <input type="hidden" name="throws[{{ $i }}][multiplier]" id="multiplier{{ $i }}" value="1">
                 @endfor
 
                 {{-- Dartboard --}}
                 <div class="dart-board">
                     @for($i = 1; $i <= 20; $i++)
-                        <button type="button" class="dart-btn" data-value="{{ $i }}">{{ $i }}</button>
+                    <button type="button" class="dart-btn" data-value="{{ $i }}">{{ $i }}</button>
                     @endfor
                     <button type="button" class="dart-btn" data-value="26">ST</button>
                     <button type="button" class="dart-btn" data-value="25">🎯</button>
@@ -159,7 +163,6 @@
 </div>
 @endsection
 
-
 @section('scripts')
 {{-- Checkout table --}}
 <script>
@@ -171,13 +174,28 @@ window.checkoutTable = @json(include(app_path('CheckoutTable.php')));
 document.addEventListener('DOMContentLoaded', () => {
     const winner = @json($game['winner'] ? true : false);
     const finalDuration = @json($game['final_duration'] ?? null);
+    const players = @json($game['players']);
     const startTime = new Date("{{ \Carbon\Carbon::parse($game['start_time'])->toIso8601String() }}");
 
-    let initialScore = {{ $game['players'][$game['current']]['score'] }};
     let currentPlayer = {{ $game['current'] }};
+    let scores = players.map(p => p.score);
+    let totalDartsArr = players.map(p => p.total_darts || 0);
+    let totalPointsArr = players.map(p => p.total_points || 0);
+    let missesArr = players.map(p => p.misses || 0);
+    let legsArr = players.map(p => p.legs || 0);
+
+    let initialScore = scores[currentPlayer];
     let currentThrow = 0;
-    let throwData = [{points:0,multiplier:1},{points:0,multiplier:1},{points:0,multiplier:1}];
+    let throwData = [
+        {points:0,multiplier:1},
+        {points:0,multiplier:1},
+        {points:0,multiplier:1}
+    ];
     let multiplier = 1;
+
+    function getPlayerRow(playerIndex) {
+        return document.querySelector(`#playerList > div.player-row[data-player-index='${playerIndex}']`);
+    }
 
     function updateDisplay() {
         let sum = 0;
@@ -190,64 +208,88 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('points' + i).value = throwData[i].points;
             document.getElementById('multiplier' + i).value = throwData[i].multiplier;
         }
-
         document.getElementById('roundsum').textContent = sum;
+
         const newScore = initialScore - sum;
-        // Score im Spielerfeld aktualisieren
-        const scoreDiv = [...document.querySelectorAll('#playerList > .player-row')]
-            .find((_, i) => i === currentPlayer)?.children[2];
-        if(scoreDiv) scoreDiv.textContent = newScore;
+
+        // Score für aktiven Spieler in Anzeige aktualisieren
+        let playerRow = getPlayerRow(currentPlayer);
+        if(playerRow) {
+            let scoreDiv = playerRow.querySelector('.player-score');
+            if(scoreDiv) scoreDiv.textContent = newScore;
+        }
 
         const tip = window.checkoutTable?.[newScore];
         document.getElementById('checkoutHilfe').textContent = tip ? tip.join(' – ') : '–';
 
         let message = '';
-        if (newScore < 2 && newScore !== 0) message = "🚫 Bust! Bitte prüfen und Weiter klicken.";
-        if (newScore === 0) message = "🎉 Gewonnen! Bitte prüfen und Weiter klicken.";
-
-        let resultHint = document.getElementById('result-hint');
-        if (!resultHint && message) {
-            resultHint = document.createElement('div');
-            resultHint.id = 'result-hint';
-            resultHint.classList.add('bust-message');
-            // An Spielercontainer anhängen, nicht an Header
-            document.getElementById('playerListContainer').appendChild(resultHint);
+        if (newScore < 2 && newScore !== 0) {
+            message = "🚫 Bust! Bitte prüfen und Weiter klicken.";
         }
-        if (resultHint) resultHint.innerHTML = message;
+        if (newScore === 0) {
+            message = "🎉 Gewonnen! Bitte prüfen und Weiter klicken.";
+        }
 
-        // Hole aktuellen Spieler vom Server-Game-Array, falls vorhanden
-        const players = @json($game['players']);
-        const player = players[currentPlayer];
+        const hintContainer = document.getElementById('result-hint-container');
+        hintContainer.innerHTML = '';
+        if(message) {
+            const div = document.createElement('div');
+            div.className = 'bust-message';
+            div.textContent = message;
+            hintContainer.appendChild(div);
+        }
 
-        const dartsThisRound = throwData.slice(0, currentThrow).length;
-        const sumMisses = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
+        const dartsThisRound = currentThrow; 
+        const missesThisRound = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
+        const sumPointsThisRound = sum;
 
-        const totalDarts = (player.total_darts || 0) + dartsThisRound;
-        const totalPoints = (player.total_points || 0) + sum;
-        const totalMisses = (player.misses || 0) + sumMisses;
+        const totalDarts = totalDartsArr[currentPlayer] + dartsThisRound;
+        const totalPoints = totalPointsArr[currentPlayer] + sumPointsThisRound;
+        const totalMisses = missesArr[currentPlayer] + missesThisRound;
+
         const average3dart = totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0;
         const average1dart = totalDarts > 0 ? (totalPoints / totalDarts) : 0;
 
-        // Aktualisiere alle relevanten Felder
-        const playerRows = [...document.querySelectorAll('#playerList > .player-row')];
-        if(playerRows[currentPlayer]) {
-            const cells = playerRows[currentPlayer].children;
-            cells[3].textContent = totalDarts;
-            cells[4].textContent = totalMisses;
-            cells[5].textContent = average3dart.toFixed(2);
-            cells[6].textContent = average1dart.toFixed(2);
-            cells[1].textContent = player.legs ?? 0;
+        if(playerRow) {
+            playerRow.querySelector('.player-darts').textContent = totalDarts;
+            playerRow.querySelector('.player-misses').textContent = totalMisses;
+            playerRow.querySelector('.player-average-3dart').textContent = average3dart.toFixed(2);
+            playerRow.querySelector('.player-average-1dart').textContent = average1dart.toFixed(2);
+            playerRow.querySelector('.player-legs').textContent = legsArr[currentPlayer];
         }
 
-        document.getElementById('next-btn').style.display =
-            (!winner && ((newScore === 0 || (newScore < 2 && newScore !== 0)) || currentThrow === 3))
-            ? 'inline-block' : 'none';
+        // Gewinnfall: Buttons deaktivieren, "Weiter"-Button ausblenden
+        if (winner) {
+            disableInputsAfterWin();
+        } else {
+            const nextBtn = document.getElementById('next-btn');
+            if (currentThrow === 3 || newScore === 0 || (newScore < 2 && newScore !== 0)) {
+                nextBtn.style.display = 'inline-block';
+            } else {
+                nextBtn.style.display = 'none';
+            }
+        }
 
-        moveActivePlayerToTop();
+        highlightCurrentPlayer();
     }
 
+    function disableInputsAfterWin() {
+        document.getElementById('next-btn').style.display = 'none';
+        document.querySelectorAll('.dart-btn[data-value]').forEach(btn => btn.disabled = true);
+        document.querySelectorAll('.multiplier-btn').forEach(btn => btn.disabled = true);
+        document.getElementById('reset-btn').disabled = true;
+    }
+
+    function highlightCurrentPlayer() {
+        document.querySelectorAll('#playerList > div.player-row').forEach(e => e.classList.remove('active-player'));
+        const currentRow = getPlayerRow(currentPlayer);
+        if(currentRow) currentRow.classList.add('active-player');
+    }
+
+    // Würfe aufnehmen
     document.querySelectorAll('.dart-btn[data-value]').forEach(btn => {
         btn.addEventListener('click', () => {
+            if (winner) return;
             if (currentThrow < 3) {
                 btn.classList.add('spin');
                 setTimeout(() => btn.classList.remove('spin'), 600);
@@ -263,15 +305,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Multiplikatoren Buttons
     document.querySelectorAll('.multiplier-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+            if(winner) return;
             multiplier = parseInt(btn.dataset.mul);
             document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
         });
     });
 
+    // Letzten Wurf zurücksetzen
     document.getElementById('reset-btn').onclick = () => {
+        if(winner) return;
         if (currentThrow > 0) {
             currentThrow--;
             throwData[currentThrow] = { points: 0, multiplier: 1 };
@@ -280,16 +326,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Runde abschließen und zum Server senden
     document.getElementById('next-btn').onclick = () => {
-        const resultHint = document.getElementById('result-hint');
+        const resultHint = document.getElementById('result-hint-container');
         if (resultHint) {
-            resultHint.remove();
+            resultHint.innerHTML = '';
         }
         document.getElementById('final_duration').value =
-        document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
+            document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
         document.getElementById('dart-form').submit();
     };
 
+    // Toggle-Checkboxes: Double In / Double Out synchronisieren
     const form = document.getElementById('dart-form');
 
     const doubleInToggle = document.getElementById('doubleInToggle');
@@ -318,19 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function moveActivePlayerToTop() {
-        const container = document.getElementById('playerList');
-        // Nur Spielerzeilen ohne Header
-        const rows = Array.from(container.querySelectorAll('.player-row'));
-        rows.forEach(row => row.classList.remove('active-player'));
-        const active = rows[currentPlayer];
-        if (active) {
-            active.classList.add('active-player');
-            container.prepend(active);
-        }
-    }
-
-    // Uhrzeit & Daueranzeige aktualisieren
     setInterval(() => {
         const now = new Date();
         const uhr = now.toLocaleTimeString('de-DE');

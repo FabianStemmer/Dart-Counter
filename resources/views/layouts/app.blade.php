@@ -70,23 +70,6 @@
       background-color: #e0e0e0;
     }
 
-    /* ========== Tabellen ========== */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 1em;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-
     /* Container mittig und mit begrenzter Breite */
     .container {
       max-width: 1200px;
@@ -196,7 +179,7 @@
       margin-top: 1em;
     }
 
-    /* Neue Layout-Stile (aus deinem aktuellen Design) */
+    /* Neue Layout-Stile */
     html, body {
       height: 100vh;
       margin: 0;
@@ -266,8 +249,8 @@
     #div_Punktebereich {
       flex: 1;
       min-height: 400px;
-      max-height: 400px; /* hier z.B. maximale Höhe einstellen */
-      overflow-y: auto; /* bei Überlauf vertikal scrollen */
+      max-height: 400px;
+      overflow-y: auto;
       margin-bottom: 10px;
       padding: 10px;
     }
@@ -288,95 +271,97 @@
 
     /* Spielerreihen Styling */
     .player-row {
-        background-color: #fff;
-        border-radius: 12px;
-        margin-bottom: 16px;
-        padding: 10px 18px;
-        display: flex;
-        gap: 12px;
-        align-items: center; /* zentriert vertikal */
-        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        transition: all 0.3s ease;
-        font-size: 16px; /* Einheitliche Schriftgröße */
-        line-height: 1.4; /* Einheitliche Zeilenhöhe */
-        min-height: 40px; /* Gleichmäßige Zeilenhöhe */
+      background-color: #fff;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      padding: 10px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: center; /* vertikale Zentrierung */
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      transition: all 0.3s ease;
+      font-size: 16px;
+      line-height: 1.4;
+      min-height: 40px;
     }
 
     .player-row:last-child {
-        margin-bottom: 0;
+      margin-bottom: 0;
     }
 
     /* Felder mit dezenter farblicher Abhebung */
     .player-row > div {
-        background-color: #e5eaf0;
-        border-radius: 6px;
-        padding: 6px 12px;
-        min-width: 50px;
-        text-align: right; /* Werte rechtsbündig */
-        font-weight: normal;
-        display: flex;
-        align-items: center; /* Text vertikal zentriert in den Feldern */
-        line-height: 1.4;
+      background-color: #e5eaf0;
+      border-radius: 6px;
+      padding: 6px 12px;
+      min-width: 50px;
+      text-align: right; /* Werte rechtsbündig */
+      font-weight: normal;
+      display: flex;
+      align-items: center; /* Text vertikal zentriert */
+      line-height: 1.4;
     }
 
     /* Name ohne Hintergrund und linksbündig, etwas größer */
     .player-row > div:first-child {
-        background: transparent;
-        font-weight: bold;
-        text-align: left;
-        flex: 3; /* Name breiter */
-        min-width: auto;
+      background: transparent;
+      font-weight: bold;
+      text-align: left;
+      flex: 2;
+      min-width: auto;
     }
 
-    /* Andere Spalten etwas breiter */
+    /* Andere Spalten gleich verteilt */
     .player-row > div:not(:first-child) {
-        flex: 2;
+      flex: 1;
     }
 
     /* Aktiver Spieler größer, hervorgehoben */
     .player-row.active-player {
-        background-color: #eaf5ff;
-        box-shadow: 0 4px 15px rgba(60,140,220,0.15);
-        padding: 20px 18px;
-        font-size: 1.1em;
-        z-index: 10;
+      background-color: #eaf5ff;
+      box-shadow: 0 4px 15px rgba(60,140,220,0.15);
+      padding: 20px 18px;
+      font-size: 1.1em;
+      z-index: 10;
     }
 
-    /* Überschriftenzeile etwas anders */
+    /* Überschriftenzeile – gleiche Höhe und Padding wie Spieler */
     .player-row.header {
-        font-weight: bold;
-        font-size: 16px;
-        line-height: 1.4;
-        min-height: 40px;
-        background: transparent !important;
-        color: #234;
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        padding: 0 18px;
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 1.4;
+      min-height: 40px;
+      background: transparent !important;
+      color: #234;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 18px; /* wichtig: gleiche Padding wie .player-row */
+      margin-bottom: 12px;
     }
 
-    /* Überschriften-Spalten */
+    /* Header Child-Divs */
     .player-row.header > div {
-        background: transparent !important;
-        color: #234;
-        padding: 0 12px;
-        min-width: auto;
-        text-align: left; /* Links ausgerichtet */
-        white-space: nowrap; /* verhindert Zeilenumbruch */
-        display: flex;
-        align-items: center; /* vertikale Zentrierung */
-        line-height: 1.4;
+      background: transparent !important;
+      color: #234;
+      padding: 6px 12px; /* gleiche Padding */
+      min-width: auto;
+      text-align: left;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      line-height: 1.4;
     }
 
-    /* Überschriften: Name breiter, andere Spalten gleichmäßig breiter */
-    .player-row.header > div:nth-child(1) {
-        flex: 3;
-    }
-    .player-row.header > div:nth-child(n+2) {
-        flex: 2;
+    /* Header: Name breiter */
+    .player-row.header > div:first-child {
+      flex: 2;
     }
 
+    /* Andere Header-Spalten flex:1 */
+    .player-row.header > div:not(:first-child) {
+      flex: 1;
+    }
 
     #div_Hauptfenster_Trennung {
       width: 5%;
@@ -390,13 +375,20 @@
     }
 
     #div_footer {
-      height: 20px;
+      height: auto;
       padding: 0 20px;
       display: flex;
       align-items: center;
       font-size: 14px;
       flex-shrink: 0;
       border-top: 1px solid #bbb;
+    }
+
+    /*für den Footer auf der Setup Seite */
+    #div_setup {
+      flex: 1 0 auto; 
+      display: flex;
+      flex-direction: column;
     }
 
     #footer_left,
@@ -424,19 +416,19 @@
       display: flex;
       justify-content: space-between;
       width: 100%;
-      gap: 10px; /* optional: etwas Abstand zwischen den beiden */
+      gap: 10px;
       box-sizing: border-box;
-      overflow: hidden; /* Scrollbalken verhindern */
+      overflow: hidden;
     }
 
     #uhrzeit,
     #spieldauer {
-      flex-shrink: 1; /* erlaubt Schrumpfen falls nötig */
+      flex-shrink: 1;
       flex-grow: 0;
-      flex-basis: 48%; /* fast je die Hälfte, damit sie nebeneinander passen */
-      white-space: nowrap; /* keine Umbrüche */
-      overflow: hidden; /* Inhalt wird abgeschnitten falls zu lang */
-      text-overflow: ellipsis; /* Überflüssiger Text wird mit "..." gekürzt */
+      flex-basis: 48%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Mobile Optimierung */
@@ -452,12 +444,12 @@
         min-width: auto;
       }
 
-      /* Für neues Layout responsiv */
       #div_Parent_Hauptfenster {
         flex-direction: column;
       }
     }
 
+    /* Switch Styles (Toggle) */
     .switch {
       position: relative;
       display: inline-block;
@@ -510,31 +502,8 @@
 
     .toggle-container {
       display: flex;
-      align-items: center; /* Vertikale Zentrierung */
-      gap: 0.5em; /* Abstand zwischen Regler und Text */
-    }
-
-    table {
-      width: 100%;
-      border-collapse: separate; /* Wichtig: verhindert Überschreibung der Border-Radien */
-      border-spacing: 0;
-      border-radius: 18px;
-      overflow: hidden; /* für Safari/Firefox bei Border-Radius */
-      border: 3px solid #234;
-      box-shadow: 0 2px 10px rgba(50,50,50,0.08);
-    }
-
-    th, td {
-      border: 2px solid #234;
-      padding: 10px;
-    }
-
-    th:first-child, td:first-child {
-      border-left-width: 2px;
-    }
-
-    th:last-child, td:last-child {
-      border-right-width: 2px;
+      align-items: center;
+      gap: 0.5em;
     }
 
     .moveup {
