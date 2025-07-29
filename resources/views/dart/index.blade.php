@@ -5,7 +5,7 @@
 
     {{-- Header --}}
     <div id="div_Titel">
-        <img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 60px; vertical-align: middle; margin-right: 10px;">
+        <img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 70px; vertical-align: middle; margin-right: 10px;">&nbsp;
         Dart Counter
     </div>
 
@@ -20,50 +20,50 @@
         {{-- Linke Spalte: Punktebereich + Infos --}}
         <div id="div_Daten">
 
-            {{-- Punkteübersicht --}}
-            <div id="div_Punktebereich">
+        {{-- Anzeige Leg und Runde --}}
+        <h2 style="margin-top: 1rem;">
+            Leg {{ $game['legNumber'] ?? 1 }}, Runde {{ $game['roundNumber'] ?? 1 }}
+        </h2>
 
-                {{-- Gewinnmeldung --}}
-                @if ($game['winner'])
-                    <div class="winner-headline">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</div>
-                    <form method="POST" action="{{ route('dart.newround') }}" style="margin-top: 1rem;">
-                        @csrf
-                        <button type="submit">Neue Runde mit den gleichen Spielern</button>
-                    </form>
-                @endif
+            {{-- Punkteübersicht als Container mit Überschrift als eigene Reihe --}}
+            <div id="playerListContainer" style="border-radius: 18px; background: #f7f7fa; padding: 18px; max-height: 400px; overflow-y: auto;">
+                
+                {{-- Überschriften-Zeile --}}
+                <div class="player-row header" style="font-weight: bold; background: transparent; padding: 0 10px; margin-bottom: 12px; color: #234;">
+                    <div style="flex:2; text-align:left;">Name</div>
+                    <div style="flex:1; text-align:right;">Win</div>
+                    <div style="flex:1; text-align:right;">Punkte</div>
+                    <div style="flex:1; text-align:right;">Darts</div>
+                    <div style="flex:1; text-align:right;">❌ Misses</div>
+                    <div style="flex:1; text-align:right;">Ø (3 Dart)</div>
+                    <div style="flex:1; text-align:right;">Ø (1 Dart)</div>
+                </div>
 
-                {{-- Punktetabelle --}}
-                <h2 style="margin-top: 1rem;">
-                    Punktestände Leg {{ $game['legNumber'] ?? 1 }}, Runde {{ $game['roundNumber'] ?? 1 }}
-                </h2>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th style="text-align:right;">Win</th>
-                            <th style="text-align:right;">Punkte</th>
-                            <th style="text-align:right;">Darts</th>
-                            <th style="text-align:right;">❌ Misses</th>
-                            <th style="text-align:right;">Ø (3 Dart)</th>
-                            <th style="text-align:right;">Ø (1 Dart)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="playerTableBody">
-                        @foreach($game['players'] as $i => $player)
-                            <tr class="player-row @if($i == $game['current'] && !$game['winner']) active @endif">
-                                <td>{{ $player['name'] }}</td>
-                                <td style="text-align:right;" id="legs-{{ $i }}">{{ $player['legs'] ?? 0 }}</td>
-                                <td style="text-align:right;" id="score-{{ $i }}">{{ $player['score'] }}</td>
-                                <td style="text-align:right;" id="darts-{{ $i }}">{{ $player['total_darts'] ?? 0 }}</td>
-                                <td style="text-align:right;" id="misses-{{ $i }}">{{ $player['misses'] ?? 0 }}</td>
-                                <td style="text-align:right;" id="average-{{ $i }}">{{ $player['average'] ?? 0 }}</td>
-                                <td style="text-align:right;" id="average1dart-{{ $i }}">{{ $player['average_1dart'] ?? 0 }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                {{-- Spieler-Liste --}}
+                <div id="playerList">
+                    @foreach($game['players'] as $i => $player)
+                        <div class="player-row @if($i == $game['current'] && !$game['winner']) active-player @endif"
+                             style="background:#fff; border-radius: 12px; margin-bottom: 16px; padding: 10px 18px; display: flex; gap: 12px; align-items: center;">
+                            <div style="flex: 2; font-weight: bold; text-align: left;">{{ $player['name'] }}</div>
+                            <div style="flex: 1; text-align: right;">{{ $player['legs'] ?? 0 }}</div>
+                            <div style="flex: 1; text-align: right;">{{ $player['score'] }}</div>
+                            <div style="flex: 1; text-align: right;">{{ $player['total_darts'] ?? 0 }}</div>
+                            <div style="flex: 1; text-align: right;">{{ $player['misses'] ?? 0 }}</div>
+                            <div style="flex: 1; text-align: right;">{{ number_format($player['average'] ?? 0, 2) }}</div>
+                            <div style="flex: 1; text-align: right;">{{ number_format($player['average_1dart'] ?? 0, 2) }}</div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
+
+            {{-- Gewinnmeldung --}}
+            @if ($game['winner'])
+                <div class="winner-headline">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</div>
+                <form method="POST" action="{{ route('dart.newround') }}" style="margin-top: 1rem;">
+                    @csrf
+                    <button type="submit">Neue Runde mit den gleichen Spielern</button>
+                </form>
+            @endif
 
             {{-- Wurfanzeige --}}
             <div class="info-row">
@@ -123,8 +123,8 @@
                     @for($i = 1; $i <= 20; $i++)
                         <button type="button" class="dart-btn" data-value="{{ $i }}">{{ $i }}</button>
                     @endfor
+                    <button type="button" class="dart-btn" data-value="26">ST</button>
                     <button type="button" class="dart-btn" data-value="25">🎯</button>
-                    <div></div>
                     <button type="button" class="dart-btn miss-btn" data-value="0">Miss</button>
                 </div>
 
@@ -151,13 +151,14 @@
 
     {{-- Footer --}}
     <div id="div_footer">
-        <div id="footer_left">Version 0.5 (Beta)</div>
+        <div id="footer_left">Version 0.7 (Beta)</div>
         <div id="footer_center">© 2025 Stemmer Software Systems Engineering</div>
-        <div id="footer_right">Build 1826.20250723</div>
+        <div id="footer_right">Build 0225.20250729</div>
     </div>
 
 </div>
 @endsection
+
 
 @section('scripts')
 {{-- Checkout table --}}
@@ -192,7 +193,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('roundsum').textContent = sum;
         const newScore = initialScore - sum;
-        document.getElementById('score-' + currentPlayer).textContent = newScore;
+        // Score im Spielerfeld aktualisieren
+        const scoreDiv = [...document.querySelectorAll('#playerList > .player-row')]
+            .find((_, i) => i === currentPlayer)?.children[2];
+        if(scoreDiv) scoreDiv.textContent = newScore;
 
         const tip = window.checkoutTable?.[newScore];
         document.getElementById('checkoutHilfe').textContent = tip ? tip.join(' – ') : '–';
@@ -206,7 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
             resultHint = document.createElement('div');
             resultHint.id = 'result-hint';
             resultHint.classList.add('bust-message');
-            document.querySelector('#div_Punktebereich').appendChild(resultHint);
+            // An Spielercontainer anhängen, nicht an Header
+            document.getElementById('playerListContainer').appendChild(resultHint);
         }
         if (resultHint) resultHint.innerHTML = message;
 
@@ -223,15 +228,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const average3dart = totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0;
         const average1dart = totalDarts > 0 ? (totalPoints / totalDarts) : 0;
 
-        document.getElementById('darts-' + currentPlayer).textContent = totalDarts;
-        document.getElementById('average-' + currentPlayer).textContent = average3dart.toFixed(1);
-        document.getElementById('average1dart-' + currentPlayer).textContent = average1dart.toFixed(1);
-        document.getElementById('misses-' + currentPlayer).textContent = totalMisses;
-        document.getElementById('legs-' + currentPlayer).textContent = player.legs ?? 0;
+        // Aktualisiere alle relevanten Felder
+        const playerRows = [...document.querySelectorAll('#playerList > .player-row')];
+        if(playerRows[currentPlayer]) {
+            const cells = playerRows[currentPlayer].children;
+            cells[3].textContent = totalDarts;
+            cells[4].textContent = totalMisses;
+            cells[5].textContent = average3dart.toFixed(2);
+            cells[6].textContent = average1dart.toFixed(2);
+            cells[1].textContent = player.legs ?? 0;
+        }
 
         document.getElementById('next-btn').style.display =
             (!winner && ((newScore === 0 || (newScore < 2 && newScore !== 0)) || currentThrow === 3))
             ? 'inline-block' : 'none';
+
+        moveActivePlayerToTop();
     }
 
     document.querySelectorAll('.dart-btn[data-value]').forEach(btn => {
@@ -307,15 +319,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function moveActivePlayerToTop() {
-    const tbody = document.getElementById('playerTableBody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const active = rows.find(row => row.classList.contains('active'));
-    if (active && tbody.firstChild !== active) {
-        active.classList.add('moveup');
-        tbody.insertBefore(active, tbody.firstChild);
-        setTimeout(() => active.classList.remove('moveup'), 500);
+        const container = document.getElementById('playerList');
+        // Nur Spielerzeilen ohne Header
+        const rows = Array.from(container.querySelectorAll('.player-row'));
+        rows.forEach(row => row.classList.remove('active-player'));
+        const active = rows[currentPlayer];
+        if (active) {
+            active.classList.add('active-player');
+            container.prepend(active);
+        }
     }
-    }    
 
     // Uhrzeit & Daueranzeige aktualisieren
     setInterval(() => {
