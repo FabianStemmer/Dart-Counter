@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Sophiensaele Dart Zähler</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     /* ========== Basic Reset ========== */
     *, *::before, *::after {
@@ -69,23 +68,6 @@
     input[type="submit"]:hover,
     input[type="button"]:hover {
       background-color: #e0e0e0;
-    }
-
-    /* ========== Tabellen ========== */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 1em;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
     }
 
     /* Container mittig und mit begrenzter Breite */
@@ -197,7 +179,7 @@
       margin-top: 1em;
     }
 
-    /* Neue Layout-Stile (aus deinem aktuellen Design) */
+    /* Neue Layout-Stile */
     html, body {
       height: 100vh;
       margin: 0;
@@ -220,25 +202,21 @@
       margin: auto;
     }
 
-    #div_Titel,
-    #div_Spieler {
+    #div_Titel {
       padding: 10px 2%;
       text-align: center;
       flex-shrink: 0;
-      margin-bottom: 10px;
+      margin-bottom: 30px;
     }
 
     #div_Titel {
-      height: 50px;
-      line-height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 30px;
+      height: 60px;
       font-weight: bold;
-      font-size: 50px;
-    }
-
-    #div_Spieler {
-      height: 50px;
-      line-height: 30px;
-      font-size: 35px;
+      font-size: 60px;
     }
 
     #div_Parent_Hauptfenster {
@@ -264,8 +242,8 @@
     #div_Punktebereich {
       flex: 1;
       min-height: 400px;
-      max-height: 400px;    /* hier z.B. maximale Höhe einstellen */
-      overflow-y: auto;     /* bei Überlauf vertikal scrollen */
+      max-height: 400px;
+      overflow-y: auto;
       margin-bottom: 10px;
       padding: 10px;
     }
@@ -284,6 +262,122 @@
       margin-bottom: 0;
     }
 
+    /* Spielerreihen Styling */
+    .player-row {
+      background-color: #fff;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      padding: 10px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: center; /* vertikale Zentrierung */
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      transition: all 0.3s ease;
+      font-size: 16px;
+      line-height: 1.4;
+      min-height: 40px;
+    }
+
+    .player-row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Felder mit dezenter farblicher Abhebung */
+    .player-row > div {
+      background-color: #e5eaf0;
+      border-radius: 6px;
+      padding: 6px 12px;
+      min-width: 50px;
+      text-align: right; /* Werte rechtsbündig */
+      font-weight: normal;
+      display: flex;
+      align-items: center; /* Text vertikal zentriert */
+      line-height: 1.4;
+    }
+
+    /* Name ohne Hintergrund und linksbündig, etwas größer */
+    .player-row > div:first-child {
+      background: transparent;
+      font-weight: bold;
+      text-align: left;
+      flex: 2;
+      min-width: auto;
+    }
+
+    /* Andere Spalten gleich verteilt */
+    .player-row > div:not(:first-child) {
+      flex: 1;
+    }
+
+    /* Aktiver Spieler größer, hervorgehoben */
+    .player-row.active-player {
+      background-color: #eaf5ff;
+      box-shadow: 0 4px 15px rgba(60,140,220,0.15);
+      padding: 20px 18px;
+      font-size: 1.2em;
+      font-weight: bold;
+      z-index: 10;
+    }
+
+    .player-row.moveup {
+        background-color: #60b5f1ff;
+        transition: background-color 0.5s ease;
+    }  
+
+    #playerList {
+        position: relative;
+    }
+
+    .player-row {
+        transition: transform 0.5s cubic-bezier(.42,.02,.58,1), background 0.5s;
+    }
+
+    .player-row.moveup {
+        background: #e3f2fd; /* sehr helles Blau */
+    }
+
+    .player-row {
+        transition: background 0.5s;
+    }
+
+    /* Überschriftenzeile – gleiche Höhe und Padding wie Spieler */
+    .player-row.header {
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 1.4;
+      min-height: 40px;
+      background: transparent !important;
+      color: #234;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 18px; /* wichtig: gleiche Padding wie .player-row */
+      margin-bottom: 12px;
+    }
+
+    /* Header Child-Divs */
+    .player-row.header > div {
+      background: transparent !important;
+      color: #234;
+      padding: 6px 12px; /* gleiche Padding */
+      min-width: auto;
+      text-align: left;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      line-height: 1.4;
+    }
+
+    /* Header: Name breiter */
+    .player-row.header > div:first-child {
+      flex: 2;
+    }
+
+    /* Andere Header-Spalten flex:1 */
+    .player-row.header > div:not(:first-child) {
+      flex: 1;
+    }
+
     #div_Hauptfenster_Trennung {
       width: 5%;
       color: black;
@@ -296,13 +390,20 @@
     }
 
     #div_footer {
-      height: 20px;
+      height: auto;
       padding: 0 20px;
       display: flex;
       align-items: center;
       font-size: 14px;
       flex-shrink: 0;
       border-top: 1px solid #bbb;
+    }
+
+    /*für den Footer auf der Setup Seite */
+    #div_setup {
+      flex: 1 0 auto; 
+      display: flex;
+      flex-direction: column;
     }
 
     #footer_left,
@@ -330,19 +431,19 @@
       display: flex;
       justify-content: space-between;
       width: 100%;
-      gap: 10px; /* optional: etwas Abstand zwischen den beiden */
+      gap: 10px;
       box-sizing: border-box;
-      overflow: hidden; /* Scrollbalken verhindern */
+      overflow: hidden;
     }
 
     #uhrzeit,
     #spieldauer {
-      flex-shrink: 1; /* erlaubt Schrumpfen falls nötig */
+      flex-shrink: 1;
       flex-grow: 0;
-      flex-basis: 48%; /* fast je die Hälfte, damit sie nebeneinander passen */
-      white-space: nowrap; /* keine Umbrüche */
-      overflow: hidden; /* Inhalt wird abgeschnitten falls zu lang */
-      text-overflow: ellipsis; /* Überflüssiger Text wird mit "..." gekürzt */
+      flex-basis: 48%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Mobile Optimierung */
@@ -358,10 +459,71 @@
         min-width: auto;
       }
 
-      /* Für neues Layout responsiv */
       #div_Parent_Hauptfenster {
         flex-direction: column;
       }
+    }
+
+    /* Switch Styles (Toggle) */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      background-color: #ccc;
+      border-radius: 24px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transition: 0.4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.4s;
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    .moveup {
+      transition: transform 0.4s;
+      transform: translateY(-1.5em);
     }
   </style>
 </head>
