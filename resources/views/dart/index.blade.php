@@ -9,11 +9,6 @@
         &nbsp;Dart Counter
     </div>
 
-    {{-- Aktueller Spieler --}}
-    <div id="div_Spieler">
-        Wurf eingeben für: <span id="currentPlayerName" style="color:blue">{{ $game['players'][$game['current']]['name'] }}</span>
-    </div>
-
     {{-- Hauptbereich: Zwei-Spalten-Layout --}}
     <div id="div_Parent_Hauptfenster">
 
@@ -36,7 +31,7 @@
                 Leg {{ $game['legNumber'] ?? 1 }}, Runde {{ $game['roundNumber'] ?? 1 }}
             </h2>
 
-            {{-- Punkteübersicht als Container --}}
+            {{-- Punkteübersicht --}}
             <div id="playerListContainer" style="border-radius: 18px; background: #f7f7fa; padding: 18px; max-height: 400px; overflow-y: auto;">
 
                 {{-- Überschriften-Zeile --}}
@@ -65,7 +60,7 @@
                     @endforeach
                 </div>
 
-                {{-- Hinweis für Bust oder Gewinn (JS-Injection) --}}
+                {{-- Hinweis für Bust oder Gewinn --}}
                 <div id="result-hint-container" style="margin-top: 1rem;"></div>
             </div>
 
@@ -169,7 +164,6 @@
 window.checkoutTable = @json(include(app_path('CheckoutTable.php')));
 </script>
 
-{{-- Hauptlogik --}}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const winner = @json($game['winner'] ? true : false);
@@ -212,8 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newScore = initialScore - sum;
 
-        // Score für aktiven Spieler in Anzeige aktualisieren
-        let playerRow = getPlayerRow(currentPlayer);
+        const playerRow = getPlayerRow(currentPlayer);
         if(playerRow) {
             let scoreDiv = playerRow.querySelector('.player-score');
             if(scoreDiv) scoreDiv.textContent = newScore;
@@ -224,19 +217,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let message = '';
         if (newScore < 2 && newScore !== 0) {
-            message = "🚫 Bust! Bitte prüfen und Weiter klicken.";
-        }
-        if (newScore === 0) {
-            message = "🎉 Gewonnen! Bitte prüfen und Weiter klicken.";
-        }
+            message = "🚫 Bust! Wurf rückgängig oder weiter.";
 
-        const hintContainer = document.getElementById('result-hint-container');
-        hintContainer.innerHTML = '';
-        if(message) {
-            const div = document.createElement('div');
-            div.className = 'bust-message';
-            div.textContent = message;
-            hintContainer.appendChild(div);
+            // Bust Hinweis & Sperre der Eingaben analog Gewinn
+            showBustMessage(message);
+            disableInputsAfterWin();
+            document.getElementById('next-btn').style.display = 'inline-block'; // Weitermachen möglich
+        }
+        else if (newScore === 0) {
+            message = "🎉 Gewonnen! Wurf rückgängig oder weiter.";
+
+            showWinMessage(message);
+            disableInputsAfterWin();
+            document.getElementById('next-btn').style.display = 'inline-block'; // zum Bestätigen Gewinn
+        } else {
+            // Normale Situation ohne Bust/Gewinn
+            clearHints();
+            if(!winner) {
+                const nextBtn = document.getElementById('next-btn');
+                if (currentThrow === 3 || (newScore < 2 && newScore !== 0)) {
+                    nextBtn.style.display = 'inline-block';
+                } else {
+                    nextBtn.style.display = 'none';
+                }
+            }
         }
 
         const dartsThisRound = currentThrow; 
@@ -258,19 +262,33 @@ document.addEventListener('DOMContentLoaded', () => {
             playerRow.querySelector('.player-legs').textContent = legsArr[currentPlayer];
         }
 
-        // Gewinnfall: Buttons deaktivieren, "Weiter"-Button ausblenden
         if (winner) {
             disableInputsAfterWin();
-        } else {
-            const nextBtn = document.getElementById('next-btn');
-            if (currentThrow === 3 || newScore === 0 || (newScore < 2 && newScore !== 0)) {
-                nextBtn.style.display = 'inline-block';
-            } else {
-                nextBtn.style.display = 'none';
-            }
+            document.getElementById('next-btn').style.display = 'none';
         }
+    }
 
-        highlightCurrentPlayer();
+    function showWinMessage(msg) {
+        const container = document.getElementById('result-hint-container');
+        clearHints();
+        const div = document.createElement('div');
+        div.className = 'win-message';
+        div.textContent = msg;
+        container.appendChild(div);
+    }
+
+    function showBustMessage(msg) {
+        const container = document.getElementById('result-hint-container');
+        clearHints();
+        const div = document.createElement('div');
+        div.className = 'bust-message';
+        div.textContent = msg;
+        container.appendChild(div);
+    }
+
+    function clearHints() {
+        const container = document.getElementById('result-hint-container');
+        container.innerHTML = '';
     }
 
     function disableInputsAfterWin() {
@@ -326,18 +344,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Runde abschließen und zum Server senden
+    // Weiter-Button: Nur beim Nicht-Gewinn erlauben, Formular absenden
     document.getElementById('next-btn').onclick = () => {
-        const resultHint = document.getElementById('result-hint-container');
-        if (resultHint) {
-            resultHint.innerHTML = '';
+        if(winner) {
+            return; // Keine weitere Aktion nach Gewinn
+        }
+        const hintContainer = document.getElementById('result-hint-container');
+        if (hintContainer) {
+            hintContainer.innerHTML = '';
         }
         document.getElementById('final_duration').value =
             document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
         document.getElementById('dart-form').submit();
     };
 
-    // Toggle-Checkboxes: Double In / Double Out synchronisieren
+    // Double In / Double Out Checkboxen synchronisieren
     const form = document.getElementById('dart-form');
 
     const doubleInToggle = document.getElementById('doubleInToggle');
@@ -366,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Uhrzeit und Spieldauer laufend aktualisieren
     setInterval(() => {
         const now = new Date();
         const uhr = now.toLocaleTimeString('de-DE');
@@ -382,7 +404,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('spieldauer').textContent = `Dauer: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
     }, 1000);
 
+    // Initialisieren
     updateDisplay();
+    highlightCurrentPlayer();
 });
 </script>
 @endsection

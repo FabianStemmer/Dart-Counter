@@ -202,28 +202,21 @@
       margin: auto;
     }
 
-    #div_Titel,
-    #div_Spieler {
+    #div_Titel {
       padding: 10px 2%;
       text-align: center;
       flex-shrink: 0;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     #div_Titel {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 30px;
       height: 60px;
       font-weight: bold;
       font-size: 60px;
-    }
-
-    #div_Spieler {
-      height: 50px;
-      line-height: 30px;
-      font-size: 35px;
     }
 
     #div_Parent_Hauptfenster {
@@ -321,8 +314,30 @@
       background-color: #eaf5ff;
       box-shadow: 0 4px 15px rgba(60,140,220,0.15);
       padding: 20px 18px;
-      font-size: 1.1em;
+      font-size: 1.2em;
+      font-weight: bold;
       z-index: 10;
+    }
+
+    .player-row.moveup {
+        background-color: #60b5f1ff;
+        transition: background-color 0.5s ease;
+    }  
+
+    #playerList {
+        position: relative;
+    }
+
+    .player-row {
+        transition: transform 0.5s cubic-bezier(.42,.02,.58,1), background 0.5s;
+    }
+
+    .player-row.moveup {
+        background: #e3f2fd; /* sehr helles Blau */
+    }
+
+    .player-row {
+        transition: background 0.5s;
     }
 
     /* Überschriftenzeile – gleiche Höhe und Padding wie Spieler */
