@@ -62,7 +62,6 @@ class DartController extends Controller
         $game = Session::get('dart_game', null);
         if (!$game) return redirect()->route('dart.setup');
 
-        // Spieler-Liste rotiert: Aktueller Spieler an Position 0
         $currentIndex = $game['current'];
         $players = $game['players'];
 
@@ -76,13 +75,9 @@ class DartController extends Controller
         $game['players'] = $players;
         $game['current'] = 0;
 
-        // Checkout-Hilfe laden
         $checkoutTable = include(app_path('CheckoutTable.php'));
         $currentScore = $game['players'][0]['score'] ?? null;
         $game['checkout_tip'] = $currentScore !== null ? ($checkoutTable[$currentScore] ?? null) : null;
-
-        // Wichtig: Session nicht neu setzen, nur auslesen!
-        // Session::put('dart_game', $game); // NICHT aktivieren!
 
         return view('dart.index', ['game' => $game]);
     }
@@ -101,13 +96,25 @@ class DartController extends Controller
 
         $current = $game['current'];
         $player = &$game['players'][$current];
-
         $throws = $request->input('throws', []);
         $bust = false;
         $bust_message = '';
         $winner = null;
         $gameEnded = false;
 
+        // Frühprüfung Double In (erster Wurf muss Double sein falls erforderlich)
+        if (!empty($game['doubleInRequired']) && empty($player['is_in'])) {
+            if (!isset($throws[0]) || (int)$throws[0]['points'] === 0 || (int)$throws[0]['multiplier'] !== 2) {
+                $game['bust'] = true;
+                $game['bust_message'] = 'Double In erforderlich! Wurf nicht gültig, nochmal versuchen.';
+                Session::put('dart_game', $game);
+                return redirect()->route('dart.index');
+            } else {
+                $player['is_in'] = true;
+            }
+        }
+
+        // Werte für Bust-Reset merken
         if (!isset($game['round_start_scores'][$current])) {
             $game['round_start_scores'][$current] = $player['score'];
             $game['round_start_points'][$current] = $player['total_points'];
@@ -121,70 +128,53 @@ class DartController extends Controller
             $multiplier = (int)($throw['multiplier'] ?? 1);
             $val = $points * $multiplier;
 
-            // Double In Logik
-            if (!empty($game['doubleInRequired']) && empty($player['is_in'])) {
-                if ($i === 0) {
-                    if ($multiplier === 2 && $points > 0) {
-                        $player['is_in'] = true;
-                    } else {
-                        $bust = true;
-                        $bust_message = 'Double In erforderlich! Wurf nicht gültig, nochmal versuchen.';
-                        break;
-                    }
-                } else {
-                    $bust = true;
-                    $bust_message = 'Double In erforderlich! Wurf nicht gültig, nochmal versuchen.';
-                    break;
-                }
-            }
-
             if ($points === 0) {
                 $player['misses'] = ($player['misses'] ?? 0) + 1;
             }
 
-            if (empty($game['doubleInRequired']) || !empty($player['is_in'])) {
-                $newScore = $player['score'] - $val;
+            if (!empty($game['doubleInRequired']) && empty($player['is_in'])) {
+                continue;
+            }
 
-                if ($newScore < 0 || $newScore == 1) {
+            $newScore = $player['score'] - $val;
+
+            // Bust sofort bei negativem Score oder Rest 1
+            if ($newScore < 0 || $newScore == 1) {
+                $bust = true;
+                $bust_message = 'Bust! Punkte werden zurückgesetzt.';
+                break;
+            }
+
+            // Double Out Checkout prüfen
+            if ($newScore == 0) {
+                if (!empty($game['doubleOutRequired']) && $multiplier != 2) {
                     $bust = true;
-                    $bust_message = 'Bust! Punkte werden zurückgesetzt.';
+                    $bust_message = 'Double Out erforderlich! Bust.';
                     break;
                 }
 
-                if ($newScore == 0) {
-                    if (!empty($game['doubleOutRequired'])) {
-                        $lastThrow = end($throws);
-                        $isDouble = false;
-                        if ($lastThrow && isset($lastThrow['multiplier'])) {
-                            $isDouble = ($lastThrow['multiplier'] == 2);
-                        }
-                        if (!$isDouble) {
-                            $bust = true;
-                            $bust_message = 'Double Out erforderlich! Bust.';
-                            break;
-                        }
-                    }
-                    $player['legs'] = ($player['legs'] ?? 0) + 1;
-                    $player['score'] = 0;
-                    $player['darts'][] = $val;
-                    $player['total_points'] += $val;
-                    $player['total_darts']++;
-                    $winner = $player['name'];
-                    $gameEnded = true;
-                    break;
-                }
-
-                $player['score'] = $newScore;
+                // Gültiger Checkout, Spieler gewinnt
+                $player['legs'] = ($player['legs'] ?? 0) + 1;
+                $player['score'] = 0;
                 $player['darts'][] = $val;
                 $player['total_points'] += $val;
                 $player['total_darts']++;
+                $winner = $player['name'];
+                $gameEnded = true;
+                break;
             }
+
+            $player['score'] = $newScore;
+            $player['darts'][] = $val;
+            $player['total_points'] += $val;
+            $player['total_darts']++;
         }
 
         if ($bust) {
             $player['score'] = $game['round_start_scores'][$current];
             $player['total_points'] = $game['round_start_points'][$current];
             $player['total_darts'] = $game['round_start_darts'][$current];
+            $winner = null;
         } else {
             unset($game['round_start_scores'][$current]);
             unset($game['round_start_points'][$current]);
@@ -210,10 +200,8 @@ class DartController extends Controller
             $game['final_duration'] = $request->input('final_duration');
         }
 
-        // Spieler wechseln, wenn noch kein Gewinner
         if (!$winner) {
             $game['current'] = ($game['current'] + 1) % count($game['players']);
-
             if ($game['current'] == $game['startPlayerIndex']) {
                 $game['roundNumber'] = ($game['roundNumber'] ?? 1) + 1;
             }
@@ -278,7 +266,7 @@ class DartController extends Controller
             'legNumber' => $legNumber,
             'roundNumber' => $roundNumber,
             'doubleOutRequired' => $game['doubleOutRequired'] ?? false,
-            'doubleInRequired' => false,
+            'doubleInRequired' => $game['doubleInRequired'] ?? false,
             'is_in' => $game['doubleInRequired'] ? false : true,
         ];
 

@@ -61,7 +61,13 @@
                 </div>
 
                 {{-- Hinweis für Bust oder Gewinn --}}
-                <div id="result-hint-container" style="margin-top: 1rem;"></div>
+                <div id="result-hint-container" style="margin-top: 1rem;">
+                    @if($game['bust'] ?? false)
+                    <div class="bust-message">{{ $game['bust_message'] ?? 'Bust!' }}</div>
+                    @elseif($game['winner'] ?? false)
+                    <div class="win-message">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</div>
+                    @endif
+                </div>
             </div>
 
             {{-- Wurfanzeige --}}
@@ -143,23 +149,22 @@
             {{-- Rücksetzen --}}
             <form method="POST" action="{{ route('dart.reset') }}" style="margin-top: 1em;">
                 @csrf
-                <button type="submit">Spiel zurücksetzen</button>
+                <button type="submit">Spiel beenden</button>
             </form>
         </div>
     </div>
 
     {{-- Footer --}}
     <div id="div_footer">
-        <div id="footer_left">Version 0.7 (Beta)</div>
+        <div id="footer_left">Version 0.8 (Beta)</div>
         <div id="footer_center">© 2025 Stemmer Software Systems Engineering</div>
-        <div id="footer_right">Build 0225.20250729</div>
+        <div id="footer_right">Build 0250.20250806</div>
     </div>
 
 </div>
 @endsection
 
 @section('scripts')
-{{-- Checkout table --}}
 <script>
 window.checkoutTable = @json(include(app_path('CheckoutTable.php')));
 </script>
@@ -167,11 +172,14 @@ window.checkoutTable = @json(include(app_path('CheckoutTable.php')));
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const winner = @json($game['winner'] ? true : false);
+    let bust = @json($game['bust'] ? true : false);
+    const bustMessage = @json($game['bust_message'] ?? '');
     const finalDuration = @json($game['final_duration'] ?? null);
     const players = @json($game['players']);
     const startTime = new Date("{{ \Carbon\Carbon::parse($game['start_time'])->toIso8601String() }}");
 
     let currentPlayer = {{ $game['current'] }};
+    let playerIsIn = @json($game['players'][$game['current']]['is_in']);
     let scores = players.map(p => p.score);
     let totalDartsArr = players.map(p => p.total_darts || 0);
     let totalPointsArr = players.map(p => p.total_points || 0);
@@ -181,11 +189,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let initialScore = scores[currentPlayer];
     let currentThrow = 0;
     let throwData = [
-        {points:0,multiplier:1},
-        {points:0,multiplier:1},
-        {points:0,multiplier:1}
+        {points: 0, multiplier: 1},
+        {points: 0, multiplier: 1},
+        {points: 0, multiplier: 1}
     ];
     let multiplier = 1;
+
+    const doubleInToggle = document.getElementById('doubleInToggle');
+    const doubleOutToggle = document.getElementById('doubleOutToggle');
 
     function getPlayerRow(playerIndex) {
         return document.querySelector(`#playerList > div.player-row[data-player-index='${playerIndex}']`);
@@ -197,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let val = throwData[i].points * throwData[i].multiplier;
             document.getElementById('wurf' + i + 'display').textContent =
                 (currentThrow > i || throwData[i].points > 0) ?
-                (throwData[i].points + (throwData[i].multiplier > 1 ? 'x'+throwData[i].multiplier : '')) : '–';
+                (throwData[i].points + (throwData[i].multiplier > 1 ? 'x' + throwData[i].multiplier : '')) : '–';
             sum += val;
             document.getElementById('points' + i).value = throwData[i].points;
             document.getElementById('multiplier' + i).value = throwData[i].multiplier;
@@ -215,35 +226,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const tip = window.checkoutTable?.[newScore];
         document.getElementById('checkoutHilfe').textContent = tip ? tip.join(' – ') : '–';
 
-        let message = '';
-        if (newScore < 2 && newScore !== 0) {
-            message = "🚫 Bust! Wurf rückgängig oder weiter.";
-
-            // Bust Hinweis & Sperre der Eingaben analog Gewinn
-            showBustMessage(message);
-            disableInputsAfterWin();
-            document.getElementById('next-btn').style.display = 'inline-block'; // Weitermachen möglich
-        }
-        else if (newScore === 0) {
-            message = "🎉 Gewonnen! Wurf rückgängig oder weiter.";
-
-            showWinMessage(message);
-            disableInputsAfterWin();
-            document.getElementById('next-btn').style.display = 'inline-block'; // zum Bestätigen Gewinn
+        clearHints();
+        if(bust) {
+            showBustMessage(bustMessage || "🚫 Bust! Wurf rückgängig oder weiter.");
+            document.getElementById('next-btn').style.display = 'inline-block';
+            disableInputs(true);
+        } else if(newScore === 0 && winner) {
+            showWinMessage(`🎉 ${players[currentPlayer].name} hat gewonnen! 🎉`);
+            disableInputs(true);
+            document.getElementById('next-btn').style.display = 'none';
         } else {
-            // Normale Situation ohne Bust/Gewinn
-            clearHints();
-            if(!winner) {
-                const nextBtn = document.getElementById('next-btn');
-                if (currentThrow === 3 || (newScore < 2 && newScore !== 0)) {
-                    nextBtn.style.display = 'inline-block';
-                } else {
-                    nextBtn.style.display = 'none';
-                }
-            }
+            document.getElementById('next-btn').style.display = (currentThrow === 3) ? 'inline-block' : 'none';
+            disableInputs(false);
         }
 
-        const dartsThisRound = currentThrow; 
+        const dartsThisRound = currentThrow;
         const missesThisRound = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
         const sumPointsThisRound = sum;
 
@@ -251,21 +248,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalPoints = totalPointsArr[currentPlayer] + sumPointsThisRound;
         const totalMisses = missesArr[currentPlayer] + missesThisRound;
 
-        const average3dart = totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0;
-        const average1dart = totalDarts > 0 ? (totalPoints / totalDarts) : 0;
-
         if(playerRow) {
             playerRow.querySelector('.player-darts').textContent = totalDarts;
             playerRow.querySelector('.player-misses').textContent = totalMisses;
-            playerRow.querySelector('.player-average-3dart').textContent = average3dart.toFixed(2);
-            playerRow.querySelector('.player-average-1dart').textContent = average1dart.toFixed(2);
+            playerRow.querySelector('.player-average-3dart').textContent = (totalDarts > 0 ? (totalPoints / totalDarts * 3) : 0).toFixed(2);
+            playerRow.querySelector('.player-average-1dart').textContent = (totalDarts > 0 ? (totalPoints / totalDarts) : 0).toFixed(2);
             playerRow.querySelector('.player-legs').textContent = legsArr[currentPlayer];
         }
+    }
 
-        if (winner) {
-            disableInputsAfterWin();
-            document.getElementById('next-btn').style.display = 'none';
-        }
+    function disableInputs(disable) {
+        document.querySelectorAll('.dart-btn[data-value]').forEach(btn => btn.disabled = disable);
+        document.querySelectorAll('.multiplier-btn').forEach(btn => btn.disabled = disable);
+        document.getElementById('reset-btn').disabled = disable;
     }
 
     function showWinMessage(msg) {
@@ -291,23 +286,53 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
     }
 
-    function disableInputsAfterWin() {
-        document.getElementById('next-btn').style.display = 'none';
-        document.querySelectorAll('.dart-btn[data-value]').forEach(btn => btn.disabled = true);
-        document.querySelectorAll('.multiplier-btn').forEach(btn => btn.disabled = true);
-        document.getElementById('reset-btn').disabled = true;
-    }
-
     function highlightCurrentPlayer() {
         document.querySelectorAll('#playerList > div.player-row').forEach(e => e.classList.remove('active-player'));
         const currentRow = getPlayerRow(currentPlayer);
         if(currentRow) currentRow.classList.add('active-player');
     }
 
-    // Würfe aufnehmen
+    function resetDartButtons() {
+        document.querySelectorAll('.dart-btn').forEach(btn => {
+            btn.classList.remove('spin');
+            btn.classList.remove('selected');
+        });
+    }
+
     document.querySelectorAll('.dart-btn[data-value]').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (winner) return;
+            if (winner || bust) return;
+
+            // Double In nur prüfen, wenn aktiviert, Spieler noch nicht drin ist UND erster Wurf
+            if (doubleInToggle.checked && !playerIsIn && currentThrow === 0) {
+                if (multiplier !== 2) {
+                    showBustMessage("Double In erforderlich! Erster Wurf muss Double sein.");
+                    document.getElementById('next-btn').style.display = 'inline-block';
+                    disableInputs(true);
+                    bust = true;
+                    return;
+                } else {
+                    // Spieler ist nun drin nach Double In erfolgreich:
+                    playerIsIn = true;
+                }
+            }
+
+            // Berechnung neuer Score nach aktuellem Wurf
+            const val = parseInt(btn.dataset.value) * multiplier;
+            const sumThrows = throwData.slice(0, currentThrow).reduce((acc, t) => acc + t.points * t.multiplier, 0) + val;
+            const newScore = initialScore - sumThrows;
+
+            // Double Out sofort prüfen bei Score == 0
+            if (newScore === 0 && doubleOutToggle.checked) {
+                if (multiplier !== 2) {
+                    showBustMessage("Double Out erforderlich! Zum Checkout nur Double erlaubt.");
+                    document.getElementById('next-btn').style.display = 'inline-block';
+                    disableInputs(true);
+                    bust = true;
+                    return;
+                }
+            }
+
             if (currentThrow < 3) {
                 btn.classList.add('spin');
                 setTimeout(() => btn.classList.remove('spin'), 600);
@@ -323,19 +348,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Multiplikatoren Buttons
     document.querySelectorAll('.multiplier-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            if(winner) return;
+            if(winner || bust) return;
             multiplier = parseInt(btn.dataset.mul);
             document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
         });
     });
 
-    // Letzten Wurf zurücksetzen
     document.getElementById('reset-btn').onclick = () => {
-        if(winner) return;
+        if(winner || bust) return;
         if (currentThrow > 0) {
             currentThrow--;
             throwData[currentThrow] = { points: 0, multiplier: 1 };
@@ -344,50 +367,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Weiter-Button: Nur beim Nicht-Gewinn erlauben, Formular absenden
     document.getElementById('next-btn').onclick = () => {
-        if(winner) {
-            return; // Keine weitere Aktion nach Gewinn
-        }
-        const hintContainer = document.getElementById('result-hint-container');
-        if (hintContainer) {
-            hintContainer.innerHTML = '';
-        }
+        if(winner) return;
+
+        resetDartButtons();
+        currentThrow = 0;
+        throwData = [
+            {points: 0, multiplier: 1},
+            {points: 0, multiplier: 1},
+            {points: 0, multiplier: 1}
+        ];
+
+        clearHints();
+
         document.getElementById('final_duration').value =
             document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
         document.getElementById('dart-form').submit();
     };
 
-    // Double In / Double Out Checkboxen synchronisieren
     const form = document.getElementById('dart-form');
 
-    const doubleInToggle = document.getElementById('doubleInToggle');
     if (doubleInToggle && form) {
         let hiddenDoubleIn = document.createElement('input');
         hiddenDoubleIn.type = 'hidden';
         hiddenDoubleIn.name = 'doubleInRequired';
         hiddenDoubleIn.value = doubleInToggle.checked ? '1' : '0';
         form.appendChild(hiddenDoubleIn);
-
         doubleInToggle.addEventListener('change', () => {
             hiddenDoubleIn.value = doubleInToggle.checked ? '1' : '0';
         });
     }
 
-    const doubleOutToggle = document.getElementById('doubleOutToggle');
     if (doubleOutToggle && form) {
         let hiddenDoubleOut = document.createElement('input');
         hiddenDoubleOut.type = 'hidden';
         hiddenDoubleOut.name = 'doubleOutRequired';
         hiddenDoubleOut.value = doubleOutToggle.checked ? '1' : '0';
         form.appendChild(hiddenDoubleOut);
-
         doubleOutToggle.addEventListener('change', () => {
             hiddenDoubleOut.value = doubleOutToggle.checked ? '1' : '0';
         });
     }
 
-    // Uhrzeit und Spieldauer laufend aktualisieren
     setInterval(() => {
         const now = new Date();
         const uhr = now.toLocaleTimeString('de-DE');
@@ -404,7 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('spieldauer').textContent = `Dauer: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
     }, 1000);
 
-    // Initialisieren
     updateDisplay();
     highlightCurrentPlayer();
 });
