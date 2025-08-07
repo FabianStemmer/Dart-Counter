@@ -114,6 +114,17 @@
 
         {{-- Rechte Spalte: Dartboard und Eingabe --}}
         <div id="div_Eingabe">
+
+        {{-- Modal für "Weiter" --}}
+            <div id="nextModal">
+                <div class="modal-content">
+                    <div id="modalMessage">Nächster Spieler?</div>
+                    <button id="modalContinueBtn" class="modal-btn">Weiter</button>
+                    <br><br>
+                    <button id="modalCancelBtn" class="modal-btn">Letzten Wurf korrigieren</button>
+                </div>
+            </div>
+            
             <form id="dart-form" method="POST" action="{{ route('dart.throw') }}" @if($game['winner']) style="display:none;" @endif>
                 @csrf
                 <input type="hidden" name="final_duration" id="final_duration" value="">
@@ -139,7 +150,7 @@
                     <button type="button" class="dart-btn multiplier-btn" data-mul="3">Triple</button>
                     <button type="button" class="dart-btn" id="reset-btn">Letzten Wurf zurück</button>
                 </div>
-                {{-- Kein sichtbarer Weiter Button mehr --}}
+                                
             </form>
 
             {{-- Rücksetzen --}}
@@ -148,16 +159,6 @@
                 <button type="submit">Spiel beenden</button>
             </form>
         </div>
-    </div>
-</div>
-
-{{-- Modal für "Weiter" --}}
-<div id="nextModal">
-    <div class="modal-content">
-        <div id="modalMessage">Nächster Spieler?</div>
-        <button id="modalContinueBtn" class="modal-btn">Weiter</button>
-        <br><br>
-        <button id="modalCancelBtn" class="modal-btn">Letzten Wurf korrigieren</button>
     </div>
 </div>
 
@@ -200,6 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let dartsThisRound = 0;
     let missesThisRound = 0;
 
+    let submitting = false; // Schutz vor Mehrfach-Submit beim Modal Continue
+
     function getPlayerRow(playerIndex) {
         return document.querySelector(`#playerList > div.player-row[data-player-index='${playerIndex}']`);
     }
@@ -239,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
             hideNextModal();
             disableInputs(true);
         } else if (currentThrow === 3) {
-            // Modal bei 3 Wurf zeigen und Eingaben noch sperren
             showNextModal();
             disableInputs(true);
         } else {
@@ -295,13 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(currentRow) currentRow.classList.add('active-player');
     }
 
-    function resetDartButtons() {
-        document.querySelectorAll('.dart-btn').forEach(btn => {
-            btn.classList.remove('spin');
-            btn.classList.remove('selected');
-        });
-    }
-
     // Funktion zum Rückgängig machen beim „letzten Wurf zurück“
     function undoLastThrow() {
         if(winner) return;
@@ -335,6 +330,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     modalContinueBtn.addEventListener('click', () => {
+        if (submitting) return; // verhindert mehrfaches Abschicken
+        submitting = true;
+
         hideNextModal();
         bust = false;
         winner = false;
@@ -346,12 +344,17 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         dartsThisRound = 0;
         missesThisRound = 0;
+        multiplier = 1;
+        playerIsIn = !doubleInToggle.checked;
 
         clearHints();
-        disableInputs(false); // Optional, sollte nach dem reload eh deaktiviert sein
+        disableInputs(false);
 
+        document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
+        document.querySelectorAll('.dart-btn').forEach(b => b.classList.remove('selected', 'active', 'highlight'));
         document.getElementById('final_duration').value =
         document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
+
         document.getElementById('dart-form').submit();
     });
 
@@ -451,6 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     missesArr[currentPlayer]++;
                 }
 
+                // **Wichtige Änderung: aktualisiere initialScore und scores beim akzeptierten Wurf**
+                initialScore = newScore;
+                scores[currentPlayer] = newScore;
+
                 multiplier = 1;
                 document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
                 currentThrow++;
@@ -494,7 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateDisplay();
     highlightCurrentPlayer();
-
 });
 </script>
 @endsection

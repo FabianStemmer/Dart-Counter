@@ -101,6 +101,24 @@ class DartController extends Controller
         $current = $game['current'];
         $player = &$game['players'][$current];
         $throws = $request->input('throws', []);
+
+        // Prüfen, ob alle Würfe 0 Punkte sind (alle Misses) — speziell für Bust-Fall nach Klick auf "Weiter"
+    $allMisses = true;
+    foreach ($throws as $throw) {
+        if ((int)($throw['points'] ?? 0) > 0) {
+            $allMisses = false;
+            break;
+        }
+    }
+
+    // Wenn alle Würfe "Miss" sind UND gerade ein Bust aktiv war, Bust zurücksetzen und direkt zur Indexseite zurückkehren
+    if ($allMisses && !empty($game['bust'])) {
+        $game['bust'] = false;
+        $game['bust_message'] = '';
+        Session::put('dart_game', $game);
+        return redirect()->route('dart.index');
+    }
+
         $bust = false;
         $bust_message = '';
         $winner = null;
