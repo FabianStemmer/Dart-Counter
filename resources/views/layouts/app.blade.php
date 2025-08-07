@@ -525,6 +525,65 @@
       transition: transform 0.4s;
       transform: translateY(-1.5em);
     }
+
+    /* Modal-Hintergrund Overlay */
+  #nextModal {
+    display: none; /* unsichtbar initial */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+
+    display: flex; /* Flexbox, zum Zentrieren */
+    justify-content: center;
+    align-items: center;
+
+    z-index: 1000; /* über allem anderen */
+  }
+ 
+  #modalMessage {
+    font-size: 2em;    /* etwas größer als bisher (z.B. 1.2em) */
+    font-weight: bold;   /* für mehr Gewicht */
+    margin-bottom: 1.0em; /* etwas mehr Abstand nach unten */
+    color: #222;         /* falls du die Farbe anpassen möchtest */
+    /* Optional: Zeilenhöhe für bessere Lesbarkeit */
+    line-height: 2;
+  }
+
+  /* Modal-Inhalt */
+  #nextModal .modal-content {
+    background: white;
+    padding: 2em;
+    border-radius: 12px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+  }
+
+  /* Buttons im Modal */
+  .modal-btn {
+    min-width: 140px; /* oder so breit wie der Miss-Button */
+    min-height: 70px;
+    font-size: 1.7em;
+    border-radius: 10px;
+    border: 2px solid #222;
+    background: #f5f5f5;
+    cursor: pointer;
+    box-sizing: border-box;
+    color: black;
+    transition: background 0.2s;
+    margin: 0.3em auto; /* zentrieren und Abstand */
+    display: inline-block;
+    width: 100%; /* Vollbreite innerhalb Modal */
+    max-width: 240px; /* ggf. maximale Breite */
+  }
+
+  .modal-btn:hover {
+    background-color: #ddd;
+  }
+
   </style>
 </head>
 
@@ -532,7 +591,10 @@
 
   {{-- Hauptinhalt --}}
   @yield('content')
-
+ 
+  {{-- Footer --}}
+  @include('partials.footer')
+ 
   {{-- Skripte --}}
   @yield('scripts')
 

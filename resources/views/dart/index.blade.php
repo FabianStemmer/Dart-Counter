@@ -139,11 +139,7 @@
                     <button type="button" class="dart-btn multiplier-btn" data-mul="3">Triple</button>
                     <button type="button" class="dart-btn" id="reset-btn">Letzten Wurf zurück</button>
                 </div>
-
-                {{-- Weiter --}}
-                <div style="display:flex; justify-content:end;">
-                    <button type="button" id="next-btn" style="display:none;">Weiter</button>
-                </div>
+                {{-- Kein sichtbarer Weiter Button mehr --}}
             </form>
 
             {{-- Rücksetzen --}}
@@ -153,25 +149,27 @@
             </form>
         </div>
     </div>
-
-    {{-- Footer --}}
-    <div id="div_footer">
-        <div id="footer_left">Version 0.8 (Beta)</div>
-        <div id="footer_center">© 2025 Stemmer Software Systems Engineering</div>
-        <div id="footer_right">Build 0250.20250806</div>
-    </div>
-
 </div>
+
+{{-- Modal für "Weiter" --}}
+<div id="nextModal">
+    <div class="modal-content">
+        <div id="modalMessage">Nächster Spieler?</div>
+        <button id="modalContinueBtn" class="modal-btn">Weiter</button>
+        <br><br>
+        <button id="modalCancelBtn" class="modal-btn">Letzten Wurf korrigieren</button>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
 <script>
 window.checkoutTable = @json(include(app_path('CheckoutTable.php')));
-</script>
 
-<script>
 document.addEventListener('DOMContentLoaded', () => {
-    const winner = @json($game['winner'] ? true : false);
+    const winnerInitial = @json($game['winner'] ? true : false);
+    let winner = winnerInitial;
     let bust = @json($game['bust'] ? true : false);
     const bustMessage = @json($game['bust_message'] ?? '');
     const finalDuration = @json($game['final_duration'] ?? null);
@@ -193,10 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
         {points: 0, multiplier: 1},
         {points: 0, multiplier: 1}
     ];
+
     let multiplier = 1;
 
     const doubleInToggle = document.getElementById('doubleInToggle');
     const doubleOutToggle = document.getElementById('doubleOutToggle');
+
+    let dartsThisRound = 0;
+    let missesThisRound = 0;
 
     function getPlayerRow(playerIndex) {
         return document.querySelector(`#playerList > div.player-row[data-player-index='${playerIndex}']`);
@@ -227,26 +229,27 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('checkoutHilfe').textContent = tip ? tip.join(' – ') : '–';
 
         clearHints();
+
         if(bust) {
             showBustMessage(bustMessage || "🚫 Bust! Wurf rückgängig oder weiter.");
-            document.getElementById('next-btn').style.display = 'inline-block';
+            showNextModal();
             disableInputs(true);
         } else if(newScore === 0 && winner) {
             showWinMessage(`🎉 ${players[currentPlayer].name} hat gewonnen! 🎉`);
+            hideNextModal();
             disableInputs(true);
-            document.getElementById('next-btn').style.display = 'none';
+        } else if (currentThrow === 3) {
+            // Modal bei 3 Wurf zeigen und Eingaben noch sperren
+            showNextModal();
+            disableInputs(true);
         } else {
-            document.getElementById('next-btn').style.display = (currentThrow === 3) ? 'inline-block' : 'none';
+            hideNextModal();
             disableInputs(false);
         }
 
-        const dartsThisRound = currentThrow;
-        const missesThisRound = throwData.slice(0, currentThrow).filter(t => t.points === 0).length;
-        const sumPointsThisRound = sum;
-
-        const totalDarts = totalDartsArr[currentPlayer] + dartsThisRound;
-        const totalPoints = totalPointsArr[currentPlayer] + sumPointsThisRound;
-        const totalMisses = missesArr[currentPlayer] + missesThisRound;
+        const totalDarts = totalDartsArr[currentPlayer];
+        const totalMisses = missesArr[currentPlayer];
+        const totalPoints = totalPointsArr[currentPlayer] + sum;
 
         if(playerRow) {
             playerRow.querySelector('.player-darts').textContent = totalDarts;
@@ -299,50 +302,159 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Funktion zum Rückgängig machen beim „letzten Wurf zurück“
+    function undoLastThrow() {
+        if(winner) return;
+        bust = false; // Bust sofort zurücksetzen!
+        if (currentThrow > 0) {
+            currentThrow--;
+
+            dartsThisRound--;
+            totalDartsArr[currentPlayer]--;
+
+            if (throwData[currentThrow].points === 0) {
+                missesThisRound--;
+                missesArr[currentPlayer]--;
+            }
+            throwData[currentThrow] = { points: 0, multiplier: 1 };
+        }
+        disableInputs(false);
+        updateDisplay();
+    }
+
+    // Modal Steuerung
+    const nextModal = document.getElementById('nextModal');
+    const modalContinueBtn = document.getElementById('modalContinueBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+    function showNextModal() {
+        nextModal.style.display = 'flex';
+    }
+    function hideNextModal() {
+        nextModal.style.display = 'none';
+    }
+
+    modalContinueBtn.addEventListener('click', () => {
+        hideNextModal();
+        bust = false;
+        winner = false;
+        currentThrow = 0;
+        throwData = [
+            {points: 0, multiplier: 1},
+            {points: 0, multiplier: 1},
+            {points: 0, multiplier: 1}
+        ];
+        dartsThisRound = 0;
+        missesThisRound = 0;
+
+        clearHints();
+        disableInputs(false); // Optional, sollte nach dem reload eh deaktiviert sein
+
+        document.getElementById('final_duration').value =
+        document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
+        document.getElementById('dart-form').submit();
+    });
+
+    modalCancelBtn.addEventListener('click', () => {
+        hideNextModal();
+        bust = false;          // Bust-Status zurücksetzen
+        disableInputs(false);  // Buttons wieder aktivieren
+        undoLastThrow();
+    });
+
     document.querySelectorAll('.dart-btn[data-value]').forEach(btn => {
         btn.addEventListener('click', () => {
             if (winner || bust) return;
 
-            // Double In nur prüfen, wenn aktiviert, Spieler noch nicht drin ist UND erster Wurf
             if (doubleInToggle.checked && !playerIsIn && currentThrow === 0) {
                 if (multiplier !== 2) {
                     showBustMessage("Double In erforderlich! Erster Wurf muss Double sein.");
-                    document.getElementById('next-btn').style.display = 'inline-block';
-                    disableInputs(true);
                     bust = true;
+
+                    updateDisplay();
+                    showNextModal();
+                    disableInputs(true);
                     return;
                 } else {
-                    // Spieler ist nun drin nach Double In erfolgreich:
                     playerIsIn = true;
                 }
             }
 
-            // Berechnung neuer Score nach aktuellem Wurf
             const val = parseInt(btn.dataset.value) * multiplier;
             const sumThrows = throwData.slice(0, currentThrow).reduce((acc, t) => acc + t.points * t.multiplier, 0) + val;
             const newScore = initialScore - sumThrows;
 
-            // Double Out sofort prüfen bei Score == 0
-            if (newScore === 0 && doubleOutToggle.checked) {
-                if (multiplier !== 2) {
-                    showBustMessage("Double Out erforderlich! Zum Checkout nur Double erlaubt.");
-                    document.getElementById('next-btn').style.display = 'inline-block';
-                    disableInputs(true);
-                    bust = true;
-                    return;
+            if (newScore < 0 || newScore === 1) {
+                throwData[currentThrow] = {
+                    points: parseInt(btn.dataset.value),
+                    multiplier: multiplier
+                };
+                dartsThisRound++;
+                totalDartsArr[currentPlayer]++;
+                if (parseInt(btn.dataset.value) === 0) {
+                    missesThisRound++;
+                    missesArr[currentPlayer]++;
                 }
+
+                updateDisplay();
+                showBustMessage("Bust! Punkte überschritten.");
+                bust = true;
+                showNextModal();
+                disableInputs(true);
+                return;
+            }
+
+            if (newScore === 0 && doubleOutToggle.checked && multiplier !== 2) {
+                throwData[currentThrow] = {
+                    points: parseInt(btn.dataset.value),
+                    multiplier: multiplier
+                };
+                dartsThisRound++;
+                totalDartsArr[currentPlayer]++;
+                if (parseInt(btn.dataset.value) === 0) {
+                    missesThisRound++;
+                    missesArr[currentPlayer]++;
+                }
+
+                updateDisplay();
+                showBustMessage("Double Out erforderlich! Zum Checkout nur Double erlaubt.");
+                bust = true;
+                showNextModal();
+                disableInputs(true);
+                return;
+            }
+
+            // Win-Check ohne Bust
+            if (newScore === 0 && !bust) {
+                winner = true;
+                showWinMessage(`🎉 ${players[currentPlayer].name} hat gewonnen! 🎉`);
+                disableInputs(true);
+                updateDisplay();
+                hideNextModal();
+                return;
             }
 
             if (currentThrow < 3) {
                 btn.classList.add('spin');
                 setTimeout(() => btn.classList.remove('spin'), 600);
+
                 throwData[currentThrow] = {
                     points: parseInt(btn.dataset.value),
                     multiplier: multiplier
                 };
+
+                dartsThisRound++;
+                totalDartsArr[currentPlayer]++;
+
+                if (parseInt(btn.dataset.value) === 0) {
+                    missesThisRound++;
+                    missesArr[currentPlayer]++;
+                }
+
                 multiplier = 1;
                 document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
                 currentThrow++;
+
                 updateDisplay();
             }
         });
@@ -359,56 +471,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('reset-btn').onclick = () => {
         if(winner || bust) return;
-        if (currentThrow > 0) {
-            currentThrow--;
-            throwData[currentThrow] = { points: 0, multiplier: 1 };
-            document.getElementById('next-btn').style.display = 'none';
-            updateDisplay();
-        }
+        undoLastThrow();
+        hideNextModal();
     };
 
-    document.getElementById('next-btn').onclick = () => {
-        if(winner) return;
-
-        resetDartButtons();
-        currentThrow = 0;
-        throwData = [
-            {points: 0, multiplier: 1},
-            {points: 0, multiplier: 1},
-            {points: 0, multiplier: 1}
-        ];
-
-        clearHints();
-
-        document.getElementById('final_duration').value =
-            document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
-        document.getElementById('dart-form').submit();
-    };
-
-    const form = document.getElementById('dart-form');
-
-    if (doubleInToggle && form) {
-        let hiddenDoubleIn = document.createElement('input');
-        hiddenDoubleIn.type = 'hidden';
-        hiddenDoubleIn.name = 'doubleInRequired';
-        hiddenDoubleIn.value = doubleInToggle.checked ? '1' : '0';
-        form.appendChild(hiddenDoubleIn);
-        doubleInToggle.addEventListener('change', () => {
-            hiddenDoubleIn.value = doubleInToggle.checked ? '1' : '0';
-        });
-    }
-
-    if (doubleOutToggle && form) {
-        let hiddenDoubleOut = document.createElement('input');
-        hiddenDoubleOut.type = 'hidden';
-        hiddenDoubleOut.name = 'doubleOutRequired';
-        hiddenDoubleOut.value = doubleOutToggle.checked ? '1' : '0';
-        form.appendChild(hiddenDoubleOut);
-        doubleOutToggle.addEventListener('change', () => {
-            hiddenDoubleOut.value = doubleOutToggle.checked ? '1' : '0';
-        });
-    }
-
+    // Zeit-Update
     setInterval(() => {
         const now = new Date();
         const uhr = now.toLocaleTimeString('de-DE');
@@ -427,6 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateDisplay();
     highlightCurrentPlayer();
+
 });
 </script>
 @endsection

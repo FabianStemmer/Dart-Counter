@@ -87,6 +87,10 @@ class DartController extends Controller
         $game = Session::get('dart_game');
         if (!$game || $game['winner']) return redirect()->route('dart.index');
 
+        // Reset Bust bei neuem Wurf
+        $game['bust'] = false;
+        $game['bust_message'] = '';
+
         if ($request->has('doubleOutRequired')) {
             $game['doubleOutRequired'] = filter_var($request->input('doubleOutRequired'), FILTER_VALIDATE_BOOLEAN);
         }

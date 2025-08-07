@@ -67,13 +67,6 @@
 
 </div>
 
-{{-- Footer --}}
-<div id="div_footer">
-    <div id="footer_left">Version 0.71 (Beta)</div>
-    <div id="footer_center">© 2025 Stemmer Software Systems Engineering</div>
-    <div id="footer_right">Build 0020.20250730</div>
-</div>
-
 
 {{-- JS für dynamisches Ein- / Ausblenden --}}
 <script>
