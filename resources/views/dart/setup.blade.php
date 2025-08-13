@@ -5,7 +5,8 @@
 <div style="height: 100px;"></div>
 
 <div id="div_setup" class="container">
-    <h1>Dartspiel Setup</h1>
+    <img src="{{ asset('images/sos_logo.jpg') }}" alt="Sophiensaele Logo" style="height: 80px; vertical-align: middle; margin-right: 10px;">
+    <h1 style="text-align: center;">Dartspiel Setup</h1>
 
     @php
         $previousPlayers = collect(Session::get('dart_game')['players'] ?? [])
