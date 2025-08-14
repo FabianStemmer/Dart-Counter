@@ -499,10 +499,13 @@
     #nextModal {
       display: none;
       position: fixed;
-      top: 40%;
+      top: 50%;
       left: 70%;
       transform: translate(-50%, -50%);
       z-index: 1000;
+      border: 5px solid rgba(173, 199, 201, 0.95); 
+      border-radius: 16px;      /* abgerundete Ecken */
+      padding: 0px;           /* Innenabstand */
     }
     #nextModal.active {
       display: flex;
@@ -512,7 +515,7 @@
 
     .modal-content {
       background:  rgba(229, 244, 255, 0.9);
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 32px 18px;
       box-shadow: 0 8px 22px rgba(0,0,0,0.09);
       text-align: center;

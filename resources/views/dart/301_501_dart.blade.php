@@ -166,6 +166,11 @@
     };
 </script>
 
-<script src="{{ asset('js/301_501_dart.js') }}"></script>
+@vite('resources/js/301_501_dart.js')
+
+<script>
+    console.log(window.gameData);
+</script>
+
 
 @endsection
