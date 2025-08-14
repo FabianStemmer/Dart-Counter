@@ -65,7 +65,10 @@
         {{-- Start-Button --}}
         <button type="submit" style="margin-top: 1em;">Spiel starten</button>
     </form>
+
 </div>
+
+@include('partials.footer')
 
 {{-- JS für dynamisches Ein- / Ausblenden --}}
 <script>

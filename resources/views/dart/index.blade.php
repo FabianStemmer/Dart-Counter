@@ -10,13 +10,13 @@
     <div id="div_Parent_Hauptfenster">
         <div id="div_Daten">
             @if ($game['winner'])
-            <div class="winner-headline" style="margin-bottom: 1rem; font-size: 1.25rem;">
-                🎉 {{ $game['winner'] }} hat gewonnen! 🎉
-            </div>
-            <form method="POST" action="{{ route('dart.newround') }}" style="margin-bottom: 1.5rem;">
-                @csrf
-                <button type="submit">Neue Runde mit den gleichen Spielern</button>
-            </form>
+                <div class="winner-headline" style="margin-bottom: 1rem; font-size: 1.25rem;">
+                    🎉 {{ $game['winner'] }} hat gewonnen! 🎉
+                </div>
+                <form method="POST" action="{{ route('dart.newround') }}" style="margin-bottom: 1.5rem;">
+                    @csrf
+                    <button type="submit">Neue Runde mit den gleichen Spielern</button>
+                </form>
             @endif
 
             <h2 style="margin-top: 0; margin-bottom: 1rem;">
@@ -34,7 +34,8 @@
                 );
             @endphp
 
-            <div id="playerListContainer" style="border-radius: 18px; background: #f7f7fa; padding: 18px; max-height: 400px; overflow-y: auto;">
+            <!-- Spieler-Tabelle -->
+            <div id="playerListContainer">
                 <div class="player-row header">
                     <div style="flex: 2; text-align:left; padding: 6px 12px;">Name</div>
                     <div style="flex: 1; text-align:right; padding: 6px 12px;">Win</div>
@@ -46,30 +47,47 @@
                 </div>
                 <div id="playerList">
                     @foreach($orderedPlayers as $i => $player)
-                        @php
-                            $originalIndex = array_search($player['name'], array_column($playerList, 'name'));
-                        @endphp
-                        <div class="player-row @if($originalIndex == $current && !$game['winner']) active-player @endif" data-player-index="{{ $originalIndex }}">
-                            <div style="flex: 2; font-weight: bold; text-align: left; padding: 6px 12px;">{{ $player['name'] }}</div>
-                            <div class="player-legs" style="flex: 1; text-align: right; padding: 6px 12px;">{{ $player['legs'] ?? 0 }}</div>
-                            <div class="player-score" style="flex: 1; text-align: right; padding: 6px 12px;" id="score-display-{{$originalIndex}}">{{ $player['score'] }}</div>
-                            <div class="player-darts" style="flex: 1; text-align: right; padding: 6px 12px;" id="darts-display-{{$originalIndex}}">{{ $player['total_darts'] ?? 0 }}</div>
-                            <div class="player-misses" style="flex: 1; text-align: right; padding: 6px 12px;" id="misses-display-{{$originalIndex}}">{{ $player['misses'] ?? 0 }}</div>
-                            <div class="player-average-3dart" style="flex: 1; text-align: right; padding: 6px 12px;" id="avg3-display-{{$originalIndex}}">{{ number_format($player['average'] ?? 0, 2) }}</div>
-                            <div class="player-average-1dart" style="flex: 1; text-align: right; padding: 6px 12px;" id="avg1-display-{{$originalIndex}}">{{ number_format($player['average_1dart'] ?? 0, 2) }}</div>
-                        </div>
+                    <div class="player-row @if($i == 0 && !$game['winner']) active-player @endif" data-player-index="{{ $i }}">
+                        <div style="flex: 2; font-weight: bold; text-align: left; padding: 6px 12px;">{{ $player['name'] }}</div>
+                        <div class="player-legs" style="flex: 1; text-align: right; padding: 6px 12px;">{{ $player['legs'] ?? 0 }}</div>
+                        <div class="player-score" style="flex: 1; text-align: right; padding: 6px 12px;" id="score-display-{{$i}}">{{ $player['score'] }}</div>
+                        <div class="player-darts" style="flex: 1; text-align: right; padding: 6px 12px;" id="darts-display-{{$i}}">{{ $player['total_darts'] ?? 0 }}</div>
+                        <div class="player-misses" style="flex: 1; text-align: right; padding: 6px 12px;" id="misses-display-{{$i}}">{{ $player['misses'] ?? 0 }}</div>
+                        <div class="player-average-3dart" style="flex: 1; text-align: right; padding: 6px 12px;" id="avg3-display-{{$i}}">{{ number_format($player['average'] ?? 0, 2) }}</div>
+                        <div class="player-average-1dart" style="flex: 1; text-align: right; padding: 6px 12px;" id="avg1-display-{{$i}}">{{ number_format($player['average_1dart'] ?? 0, 2) }}</div>
+                    </div>
                     @endforeach
                 </div>
                 <div id="result-hint-container" style="margin-top: 1rem;">
                     @if($game['bust'] ?? false)
-                    <div class="bust-message">{{ $game['bust_message'] ?? 'Bust!' }}</div>
+                        <div class="bust-message">{{ $game['bust_message'] ?? 'Bust!' }}</div>
                     @elseif($game['winner'] ?? false)
-                    <div class="win-message">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</div>
+                        <div class="win-message">🎉 {{ $game['winner'] }} hat gewonnen! 🎉</div>
                     @endif
                 </div>
             </div>
 
-            <div class="info-row" style="margin-top: 1rem;">
+            <div class="info-row" style="margin-top: 0.5rem;">
+                Checkout-Hilfe:
+                <span id="checkoutHilfe">{{ $game['checkout_tip'] ?? '–' }}</span>
+            </div>
+
+            <!-- Double In/Out Switches -->
+            <div class="toggle-container" style="margin-top: 1em; margin-bottom:1em;">
+                <label class="switch">
+                    <input type="checkbox" disabled {{ !empty($game['doubleInRequired']) ? 'checked' : '' }}>
+                    <span class="slider"></span>
+                </label>
+                <span>Double In aktivieren</span>
+
+                <label class="switch">
+                    <input type="checkbox" disabled {{ !empty($game['doubleOutRequired']) ? 'checked' : '' }}>
+                    <span class="slider"></span>
+                </label>
+                <span>Double Out aktivieren</span>
+            </div>
+
+            <div class="info-row">
                 Aktuelle Würfe:
                 <span>
                     <span id="wurf0display">–</span> /
@@ -80,50 +98,26 @@
                 </span>
             </div>
 
-            {{-- Checkout-Hilfe --}}
-            <div class="info-row" style="margin-top: 0.5rem;">
-                Checkout-Hilfe:
-                <span id="checkoutHilfe">{{ $game['checkout_tip'] ?? '–' }}</span>
-            </div>
-
-            {{-- DoubleIn/DoubleOut Anzeige --}}
-            <div class="toggle-container" style="margin-top: 1em; margin-bottom:1em; display: flex; align-items: center; gap: 1.5em;">
-                <label class="switch" style="margin: 0;">
-                    <input type="checkbox" id="doubleInToggle" name="doubleInToggle" {{ !empty($game['doubleInRequired']) ? 'checked' : '' }}>
-                    <span class="slider round"></span>
-                </label>
-                <span>Double In aktivieren</span>
-
-                <label class="switch" style="margin: 0;">
-                    <input type="checkbox" id="doubleOutToggle" name="doubleOutToggle" {{ !empty($game['doubleOutRequired']) ? 'checked' : '' }}>
-                    <span class="slider round"></span>
-                </label>
-                <span>Double Out aktivieren</span>
-            </div>
-
-            {{-- Uhrzeit + Dauer --}}
-            <div class="info-row zeitdauer">
+            <div class="info-row zeitdauer" style="display: flex; justify-content: space-between;">
                 <div id="uhrzeit">Uhrzeit: --:--:--</div>
                 <div id="spieldauer">Dauer: 00:00</div>
             </div>
-
         </div>
 
-        {{-- Spaltentrenner --}}
         <div id="div_Hauptfenster_Trennung"></div>
 
-        {{-- Rechte Spalte: Dartboard und Eingabe --}}
+        <!-- Rechte Spalte -->
         <div id="div_Eingabe">
             <form id="dart-form" method="POST" action="{{ route('dart.throw') }}" @if($game['winner']) style="display:none;" @endif>
                 @csrf
                 @for ($i = 0; $i < 3; $i++)
-                <input type="hidden" name="throws[{{ $i }}][points]" id="points{{ $i }}" value="0">
-                <input type="hidden" name="throws[{{ $i }}][multiplier]" id="multiplier{{ $i }}" value="1">
+                    <input type="hidden" name="throws[{{ $i }}][points]" id="points{{ $i }}" value="0">
+                    <input type="hidden" name="throws[{{ $i }}][multiplier]" id="multiplier{{ $i }}" value="1">
                 @endfor
 
                 <div class="dart-board">
                     @for($i = 1; $i <= 20; $i++)
-                    <button type="button" class="dart-btn" data-value="{{ $i }}">{{ $i }}</button>
+                        <button type="button" class="dart-btn" data-value="{{ $i }}">{{ $i }}</button>
                     @endfor
                     <button type="button" class="dart-btn" data-value="25">🎯</button>
                     <button type="button" class="dart-btn miss-btn" data-value="0">Miss</button>
@@ -141,8 +135,8 @@
         </div>
     </div>
 
-    {{-- Modal für "Weiter" --}}
-    <div id="nextModal" style="display:none;">
+    <!-- Modal für "Weiter" -->
+    <div id="nextModal">
         <div class="modal-content">
             <div id="modalMessage">Nächster Spieler?</div>
             <button id="modalContinueBtn" class="modal-btn">Weiter</button>
@@ -150,6 +144,11 @@
             <button id="modalCancelBtn" class="modal-btn">Letzten Wurf korrigieren</button>
         </div>
     </div>
+
+    
+    {{-- Footer --}}
+    @include('partials.footer')
+
 </div>
 @endsection
 
@@ -247,8 +246,9 @@ function updateDisplay() {
 }
 
 function checkShowModal() {
+    const modal = document.getElementById('nextModal');
     if (bust || winner || currentThrows.length === 3) {
-        document.getElementById('nextModal').style.display = 'block';
+        modal.classList.add('active');
         if (bust) {
             document.getElementById('modalMessage').textContent = 'Bust! Punkte werden zurückgesetzt.';
         } else if (winner) {
@@ -257,7 +257,7 @@ function checkShowModal() {
             document.getElementById('modalMessage').textContent = 'Nächster Spieler?';
         }
     } else {
-        document.getElementById('nextModal').style.display = 'none';
+        modal.classList.remove('active');
     }
 }
 
@@ -345,6 +345,7 @@ document.querySelectorAll('.dart-btn').forEach(btn => {
         }
     });
 });
+
 document.getElementById('reset-btn').addEventListener('click', function(e) {
     e.preventDefault();
     if (currentThrows.length > 0 && !winner && !bust) {
@@ -370,7 +371,7 @@ document.getElementById('modalCancelBtn').addEventListener('click', function(e) 
         checkShowModal();
         disableInputs(false);
     }
-    document.getElementById('nextModal').style.display = 'none';
+    document.getElementById('nextModal').classList.remove('active');
 });
 
 // Initialanzeige
@@ -534,10 +535,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCancelBtn = document.getElementById('modalCancelBtn');
 
     function showNextModal() {
-        nextModal.style.display = 'flex';
+        document.getElementById('nextModal').classList.add('active');
     }
     function hideNextModal() {
-        nextModal.style.display = 'none';
+        document.getElementById('nextModal').classList.remove('active');
     }
 
     modalContinueBtn.addEventListener('click', () => {

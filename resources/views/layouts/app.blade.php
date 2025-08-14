@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>Sophiensaele Dart Zähler</title>
+  <title>@yield('title', 'Sophiensaele Dart Counter')</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -178,7 +178,8 @@
     }
 
     /* Aktiver Spieler hervorheben */
-    .player-row.active {
+    .player-row.active,
+    .player-row.active-player {
       font-weight: bold;
       background: #caf0f8;
     }
@@ -264,11 +265,111 @@
     #div_Punktebereich {
       flex: 1;
       min-height: 400px;
-      max-height: 400px;    /* hier z.B. maximale Höhe einstellen */
-      overflow-y: auto;     /* bei Überlauf vertikal scrollen */
+      max-height: 400px;
+      overflow-y: auto;
       margin-bottom: 10px;
       padding: 10px;
     }
+
+    /* Tabelle im neuen Design */
+    #playerListContainer {
+      background: #e3f4ff;
+      border-radius: 18px;
+      box-shadow: 0 4px 32px rgba(33, 150, 243, 0.10);
+      padding: 24px 12px;
+      max-width: 1000px;
+      margin: 0 auto 18px auto;
+    }
+
+    .player-row,
+    .player-row.header {
+      background: none !important;
+      font-size: 1.11em;
+      margin-bottom: 8px;
+    }
+    .player-row.header {
+      font-weight: bold;
+      background: #f9f9fc;
+      border-radius: 10px 10px 0 0;
+      padding: 6px 0;
+    }
+    .player-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      background: #fff;
+      border-radius: 10px;
+      min-height: 44px;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .player-row.active-player {
+      background: #d0edff;
+      font-size: 1.18em;
+      min-height: 56px;
+      box-shadow: 0 2px 12px rgba(33,150,243,0.09);
+    }
+
+    /* Tabellenkopf bleibt wie bisher */
+    .player-row.header > div {
+      background: none !important;
+      font-weight: bold;
+      border-radius: 0;
+      color: #333;
+      padding: 8px 12px !important;
+    }
+
+    /* Aktiver Spieler: Zeile hervorheben und Text größer */
+    .player-row.active-player {
+      background: #e3f4ff !important;
+      font-size: 1.23em;
+      border: 2px solid #2196F3;
+      box-shadow: 0 2px 12px rgba(33,150,243,0.06);
+    }
+
+    /* Zellen-Design für Werte beim aktiven Spieler */
+    .player-row.active-player > div {
+      background: #f4f6fa !important; /* hellgrau */
+      color: #222;
+      border-radius: 10px;
+      margin: 0 5px;
+      padding: 10px 14px !important;
+      font-weight: 500;
+      box-shadow: none;
+      border: none;
+    }
+
+    /* Wertefelder für ALLE Spieler: abgerundet, hellgrau */
+    .player-row > div:not(:first-child) {
+      background: #f4f6fa;
+      color: #222;
+      border-radius: 8px;
+      margin: 0 5px;
+      padding: 8px 12px !important;
+      font-weight: 500;
+      box-shadow: none;
+      border: none;
+    }
+
+        /* Name-Feld ohne Box, nur Text */
+    .player-row > div:first-child {
+      background: transparent !important;
+      font-weight: bold;
+      padding: 8px 12px !important;
+      border-radius: 8px 0 0 8px;
+    }
+
+    /* Unterschiedliche Farben für die einzelnen Werte-Spalten */
+    .player-row.active-player > div.player-score    { background: #b6e0fe; color: #09344e; }
+    .player-row.active-player > div.player-darts    { background: #e0ecf7; color: #09344e; }
+    .player-row.active-player > div.player-misses   { background: #ffd6d6; color: #700; }
+    .player-row.active-player > div.player-average-3dart,
+    .player-row.active-player > div.player-average-1dart { background: #ffeabf; color: #664d03; }
+    .player-row.active-player > div.player-legs     { background: #daf3e3; color: #10743f; }
+    .player-row.active-player > div:first-child {
+      background: #e3f4ff !important; /* gleicht dem Zeilenhintergrund */
+      font-weight: bold;
+    }
+
 
     .info-row {
       height: 40px;
@@ -297,6 +398,10 @@
 
     #div_footer {
       height: 20px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
       padding: 0 20px;
       display: flex;
       align-items: center;
@@ -330,19 +435,138 @@
       display: flex;
       justify-content: space-between;
       width: 100%;
-      gap: 10px; /* optional: etwas Abstand zwischen den beiden */
+      gap: 10px;
       box-sizing: border-box;
-      overflow: hidden; /* Scrollbalken verhindern */
+      overflow: hidden;
     }
 
     #uhrzeit,
     #spieldauer {
-      flex-shrink: 1; /* erlaubt Schrumpfen falls nötig */
+      flex-shrink: 1;
       flex-grow: 0;
-      flex-basis: 48%; /* fast je die Hälfte, damit sie nebeneinander passen */
-      white-space: nowrap; /* keine Umbrüche */
-      overflow: hidden; /* Inhalt wird abgeschnitten falls zu lang */
-      text-overflow: ellipsis; /* Überflüssiger Text wird mit "..." gekürzt */
+      flex-basis: 48%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Switches (Double In/Out) */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 2em;
+      margin: 12px 0;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      margin-right: 8px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px; width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Modal */
+
+    #nextModal {
+      display: none;
+      position: fixed;
+      top: 40%;
+      left: 70%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+    }
+    #nextModal.active {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background:  rgba(229, 244, 255, 0.9);
+      border-radius: 16px;
+      padding: 32px 18px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.09);
+      text-align: center;
+      min-width: 400px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .modal-content > * {
+      margin-bottom: 12px;
+    }
+
+    #modalMessage {
+      font-size: 1.45em;
+      font-weight: bold;
+      margin-bottom: 28px;
+    }
+
+    .modal-content > *:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-btn {
+      font-size: 1.17em;
+      padding: 13px 0;
+      border-radius: 9px;
+      border: 2px solid #222;
+      background: #fff;
+      cursor: pointer;
+      width: 90%;
+      min-width: 160px;
+      margin-bottom: 15px;
+      transition: background 0.14s, border-color 0.14s;
+    }
+    .modal-btn:last-child {
+      margin-bottom: 0;
+    }
+    .modal-btn:active {
+      background: #e3f4ff;
+      border-color: #2196F3;
+    }
+
+    /* Win & Bust */
+    .win-message {
+      color: #2196F3;
+      font-weight: bold;
+      padding: 6px 0;
+    }
+    .bust-message {
+      color: #c00;
+      font-weight: bold;
+      padding: 6px 0;
     }
 
     /* Mobile Optimierung */
@@ -357,22 +581,19 @@
         max-width: 100%;
         min-width: auto;
       }
-
-      /* Für neues Layout responsiv */
       #div_Parent_Hauptfenster {
         flex-direction: column;
       }
+      #wrapper_div {
+        width: 98%;
+      }
     }
   </style>
+  @yield('head')
 </head>
 
 <body>
-
-  {{-- Hauptinhalt --}}
   @yield('content')
-
-  {{-- Skripte --}}
   @yield('scripts')
-
 </body>
 </html>
