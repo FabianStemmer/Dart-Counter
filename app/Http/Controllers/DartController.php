@@ -60,7 +60,7 @@ class DartController extends Controller
         $this->updateCheckoutTip($game, $game['players'][0]['score'] ?? null);
 
         Session::put('dart_game', $game);
-        return redirect()->route('dart.index');
+        return redirect()->route('dart.301_501_dart');
     }
 
     /**
@@ -77,7 +77,7 @@ class DartController extends Controller
         // Checkout-Tipp aktualisieren:
         $this->updateCheckoutTip($game, $game['players'][ $game['current'] ?? 0 ]['score'] ?? null);
 
-        return view('dart.index', ['game' => $game]);
+        return view('dart.301_501_dart', ['game' => $game]);
     }
 
     /**
@@ -86,7 +86,7 @@ class DartController extends Controller
     public function throwDart(Request $request)
     {
         $game = Session::get('dart_game');
-        if (!$game || ($game['winner'] ?? false)) return redirect()->route('dart.index');
+        if (!$game || ($game['winner'] ?? false)) return redirect()->route('dart.301_501_dart');
         $game = $this->ensureDefaults($game);
 
         $throws = $request->input('throws', []);
@@ -108,7 +108,7 @@ class DartController extends Controller
                 $game['winner'] = null;
                 $this->updateCheckoutTip($game, $player['score']);
                 Session::put('dart_game', $game);
-                return redirect()->route('dart.index');
+                return redirect()->route('dart.301_501_dart');
             }
             $player['is_in'] = true;
         }
@@ -207,7 +207,7 @@ class DartController extends Controller
         $game = $this->ensureDefaults($game);
 
         Session::put('dart_game', $game);
-        return redirect()->route('dart.index');
+        return redirect()->route('dart.301_501_dart');
     }
 
     /**
@@ -281,7 +281,7 @@ class DartController extends Controller
         $newGame = $this->ensureDefaults($newGame);
 
         Session::put('dart_game', $newGame);
-        return redirect()->route('dart.index');
+        return redirect()->route('dart.301_501_dart');
     }
 
     /**

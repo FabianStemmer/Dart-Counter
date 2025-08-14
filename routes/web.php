@@ -5,7 +5,7 @@ use App\Http\Controllers\DartController;
 
 Route::get('/', [DartController::class, 'setup'])->name('dart.setup');
 Route::post('/start', [DartController::class, 'startGame'])->name('dart.start');
-Route::get('/game', [DartController::class, 'index'])->name('dart.index');
+Route::get('/game', [DartController::class, 'index'])->name('dart.301_501_dart');
 Route::post('/throw', [DartController::class, 'throwDart'])->name('dart.throw');
 Route::post('/reset', [DartController::class, 'resetGame'])->name('dart.reset');
 Route::post('/newround', [DartController::class, 'newRound'])->name('dart.newround');

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    /* ========== Basic Reset ========== */
+    /* ========== Basic Reset ========== */transliterator_list_ids
     *, *::before, *::after {
       box-sizing: border-box;
     }
@@ -230,8 +230,8 @@
     }
 
     #div_Titel {
-      height: 50px;
-      line-height: 30px;
+      height: 100px;
+      line-height: 50px;
       font-weight: bold;
       font-size: 50px;
     }
