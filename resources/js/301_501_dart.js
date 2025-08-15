@@ -1,14 +1,14 @@
-const checkoutTable = window.checkoutTable || {};   
+// resources/js/301_501_dart.js
+// Dartspiel-Logik: Feature-komplett, aber ohne doppelte/kumulative Wurfzählung (Summenfehler beseitigt!)
+
+const checkoutTable = window.checkoutTable || {};
 const gameData = window.gameData;
 
-let currentThrows = [];
-let currentMultiplier = 1;
-let bust = false;
-let winner = gameData.winnerInitial || false;
 const currentPlayer = gameData.current;
 const playerData = gameData.players;
 const finalDuration = gameData.finalDuration;
 const startTime = new Date(gameData.startTime);
+
 function pad(n) { return n < 10 ? '0' + n : n; }
 
 function updateUhrzeit() {
@@ -35,199 +35,9 @@ function updateSpieldauer() {
 setInterval(updateSpieldauer, 1000);
 updateSpieldauer();
 
-// Startwerte aus dem aktuellen Spieler:
-function getStartValues() {
-    return {
-        startScore: parseInt(document.getElementById('score-display-' + currentPlayer).textContent),
-        startDarts: parseInt(document.getElementById('darts-display-' + currentPlayer).textContent),
-        startMisses: parseInt(document.getElementById('misses-display-' + currentPlayer).textContent),
-        startAvg3: parseFloat(document.getElementById('avg3-display-' + currentPlayer).textContent.replace(',', '.')),
-        startAvg1: parseFloat(document.getElementById('avg1-display-' + currentPlayer).textContent.replace(',', '.'))
-    };
-}
-
-function updateDisplay() {
-    const { startScore, startDarts, startMisses } = getStartValues();
-
-    let currentScore = startScore; // Starte mit dem ursprünglichen Punktestand
-    let darts = startDarts;
-    let misses = startMisses;
-    let v=0;
-
-    currentThrows.forEach((t, i) => {
-        const v = t.points * t.multiplier;
-        currentScore -= v; // Ziehe die Punkte des aktuellen Wurfs vom Punktestand ab
-        darts++;
-        if (t.points === 0) misses++;
-        document.getElementById('wurf' + i + 'display').textContent = v;
-    });
-
-    for (let i = currentThrows.length; i < 3; i++) {
-        document.getElementById('wurf' + i + 'display').textContent = '–';
-    }
-
-    // Setze die korrekten Werte für Rundensumme und Restscore
-    const scoredPoints = startScore - currentScore; // Punkte, die erzielt wurden
-    document.getElementById('roundsum').textContent = scoredPoints;
-    document.getElementById('score-display-' + currentPlayer).textContent = currentScore;
-
-    // Aktualisiere Darts, Misses und Durchschnittswerte
-    document.getElementById('darts-display-' + currentPlayer).textContent = darts;
-    document.getElementById('misses-display-' + currentPlayer).textContent = misses;
-
-    const avg1 = darts > 0 ? (scoredPoints / darts) : 0; // Durchschnitt pro Dart
-    const avg3 = darts > 0 ? (scoredPoints / darts) * 3 : 0; // Durchschnitt pro 3 Darts
-    document.getElementById('avg3-display-' + currentPlayer).textContent = avg3.toFixed(2);
-    document.getElementById('avg1-display-' + currentPlayer).textContent = avg1.toFixed(2);
-
-    // Live-Update für Checkout-Hilfe
-    const checkoutTable = window.checkoutTable;
-    const tip = checkoutTable && checkoutTable[currentScore] ? checkoutTable[currentScore].join(' – ') : '–';
-    document.getElementById('checkoutHilfe').textContent = tip;
-
-    // Schreibe die aktuellen Würfe in die Hidden Felder für das Backend
-    for (let i = 0; i < 3; i++) {
-        document.getElementById('points' + i).value = currentThrows[i] ? currentThrows[i].points : 0;
-        document.getElementById('multiplier' + i).value = currentThrows[i] ? currentThrows[i].multiplier : 1;
-    }
-}
-
-function checkShowModal() {
-    const modal = document.getElementById('nextModal');
-    if (bust || winner || currentThrows.length === 3) {
-        modal.classList.add('active');
-        if (bust) {
-            document.getElementById('modalMessage').textContent = 'Bust! Punkte werden zurückgesetzt.';
-        } else if (winner) {
-            document.getElementById('modalMessage').textContent = 'Spiel beendet! Nächste Runde starten?';
-        } else {
-            document.getElementById('modalMessage').textContent = 'Nächster Spieler?';
-        }
-    } else {
-        modal.classList.remove('active');
-    }
-}
-
-function disableInputs(disable) {
-    document.querySelectorAll('.dart-btn').forEach(btn => btn.disabled = disable);
-    document.querySelectorAll('.multiplier-btn').forEach(btn => btn.disabled = disable);
-    document.getElementById('reset-btn').disabled = disable;
-}
-
-// Sofortige Bust/Gewinn-Prüfung nach jedem Wurf!
-document.querySelectorAll('.dart-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (winner || bust) return;
-        if(this.classList.contains('multiplier-btn')) {
-            currentMultiplier = parseInt(this.dataset.mul);
-            return;
-        }
-        if(currentThrows.length >= 3) return;
-
-        const value = parseInt(this.dataset.value);
-        const mul = currentMultiplier;
-        currentMultiplier = 1;
-
-        currentThrows.push({points: value, multiplier: mul});
-
-        // Hole Startwerte immer frisch!
-        const { startScore } = getStartValues();
-
-        let sum = currentThrows.reduce((acc, t) => acc + t.points * t.multiplier, 0);
-        let newScore = startScore - sum;
-
-        // DoubleIn/DoubleOut Werte aus der Anzeige holen
-        const doubleIn = document.getElementById('doubleInToggle') && document.getElementById('doubleInToggle').checked;
-        const doubleOut = document.getElementById('doubleOutToggle') && document.getElementById('doubleOutToggle').checked;
-
-        // Double In prüfen (beim ersten Wurf)
-        if (doubleIn && currentThrows.length === 1 && mul !== 2 && value !== 0) {
-            bust = true;
-            winner = false;
-            updateDisplay();
-            checkShowModal();
-            disableInputs(true);
-            return;
-        }
-
-        // Bust prüfen
-        if (newScore < 0 || newScore === 1) {
-            bust = true;
-            winner = false;
-            updateDisplay();
-            checkShowModal();
-            disableInputs(true);
-            return;
-        }
-
-        // Double Out prüfen
-        if (newScore === 0 && doubleOut && mul !== 2) {
-            bust = true;
-            winner = false;
-            updateDisplay();
-            checkShowModal();
-            disableInputs(true);
-            return;
-        }
-
-        // Gewinn prüfen
-        if (newScore === 0) {
-            winner = true;
-            bust = false;
-            updateDisplay();
-            checkShowModal();
-            disableInputs(true);
-            return;
-        }
-
-        // Normalfall: nach 3 Würfen auch Modal zeigen
-        if(currentThrows.length === 3) {
-            updateDisplay();
-            checkShowModal();
-            disableInputs(true);
-        } else {
-            updateDisplay();
-            checkShowModal();
-        }
-    });
-});
-
-document.getElementById('reset-btn').addEventListener('click', function(e) {
-    e.preventDefault();
-    if (currentThrows.length > 0 && !winner && !bust) {
-        currentThrows.pop();
-        updateDisplay();
-        checkShowModal();
-    }
-});
-
-// MODAL-Logik für "Weiter"
-document.getElementById('modalContinueBtn').addEventListener('click', function(e) {
-    e.preventDefault();
-    if(currentThrows.length === 0 && !bust && !winner) return;
-    document.getElementById('dart-form').submit();
-});
-document.getElementById('modalCancelBtn').addEventListener('click', function(e) {
-    e.preventDefault();
-    if(currentThrows.length > 0) {
-        currentThrows.pop();
-        bust = false;
-        winner = false;
-        updateDisplay();
-        checkShowModal();
-        disableInputs(false);
-    }
-    document.getElementById('nextModal').classList.remove('active');
-});
-
-// Initialanzeige
-window.onload = function() {
-    updateDisplay();
-    checkShowModal();
-};
-
+// --- Hauptspiel-Logik ---
 document.addEventListener('DOMContentLoaded', () => {
+    // State-Variablen
     const winnerInitial = window.gameData.winnerInitial || false;
     let winner = winnerInitial;
     let bust = window.gameData.bust || false;
@@ -274,8 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 (currentThrow > i || throwData[i].points > 0) ?
                 (throwData[i].points + (throwData[i].multiplier > 1 ? 'x' + throwData[i].multiplier : '')) : '–';
             sum += val;
-            document.getElementById('points' + i).value = throwData[i].points;
-            document.getElementById('multiplier' + i).value = throwData[i].multiplier;
+
+            let pointsInput = document.getElementById('points' + i);
+            if (pointsInput) pointsInput.value = throwData[i].points;
+
+            let multiplierInput = document.getElementById('multiplier' + i);
+            if (multiplierInput) multiplierInput.value = throwData[i].multiplier;
         }
         document.getElementById('roundsum').textContent = sum;
 
@@ -356,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(currentRow) currentRow.classList.add('active-player');
     }
 
-    // Funktion zum Rückgängig machen beim „letzten Wurf zurück“
     function undoLastThrow() {
         if(winner) return;
         bust = false; // Bust sofort zurücksetzen!
@@ -404,15 +217,20 @@ document.addEventListener('DOMContentLoaded', () => {
         dartsThisRound = 0;
         missesThisRound = 0;
         multiplier = 1;
-        playerIsIn = !doubleInToggle.checked;
+        playerIsIn = !(doubleInToggle && doubleInToggle.checked);
+
+        initialScore = scores[currentPlayer]; 
 
         clearHints();
         disableInputs(false);
 
         document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
         document.querySelectorAll('.dart-btn').forEach(b => b.classList.remove('selected', 'active', 'highlight'));
-        document.getElementById('final_duration').value =
-        document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
+
+        const finalDurationInput = document.getElementById('final_duration');
+        if(finalDurationInput) {
+            finalDurationInput.value = document.getElementById('spieldauer').textContent.replace('Dauer: ', '');
+        }
 
         document.getElementById('dart-form').submit();
     });
@@ -428,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             if (winner || bust) return;
 
-            if (doubleInToggle.checked && !playerIsIn && currentThrow === 0) {
+            if (doubleInToggle && doubleInToggle.checked && !playerIsIn && currentThrow === 0) {
                 if (multiplier !== 2) {
                     showBustMessage("Double In erforderlich! Erster Wurf muss Double sein.");
                     bust = true;
@@ -442,18 +260,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const val = parseInt(btn.dataset.value) * multiplier;
-            const sumThrows = throwData.slice(0, currentThrow).reduce((acc, t) => acc + t.points * t.multiplier, 0) + val;
-            const newScore = initialScore - sumThrows;
+            // Nur Einzelwurf schreiben, nie kumulierte Summe!
+            const value = parseInt(btn.dataset.value);
 
+            // Prognose: Wie wäre der neue Score, falls dieser Wurf gezählt wird?
+            let sumVorher = 0;
+            for(let i=0; i<currentThrow; i++) {
+                sumVorher += throwData[i].points * throwData[i].multiplier;
+            }
+            const newScore = initialScore - sumVorher - (value * multiplier);
+
+            // Bust
             if (newScore < 0 || newScore === 1) {
                 throwData[currentThrow] = {
-                    points: parseInt(btn.dataset.value),
+                    points: value,
                     multiplier: multiplier
                 };
                 dartsThisRound++;
                 totalDartsArr[currentPlayer]++;
-                if (parseInt(btn.dataset.value) === 0) {
+                if (value === 0) {
                     missesThisRound++;
                     missesArr[currentPlayer]++;
                 }
@@ -466,14 +291,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (newScore === 0 && doubleOutToggle.checked && multiplier !== 2) {
+            // Double Out prüfen
+            if (newScore === 0 && doubleOutToggle && doubleOutToggle.checked && multiplier !== 2) {
                 throwData[currentThrow] = {
-                    points: parseInt(btn.dataset.value),
+                    points: value,
                     multiplier: multiplier
                 };
                 dartsThisRound++;
                 totalDartsArr[currentPlayer]++;
-                if (parseInt(btn.dataset.value) === 0) {
+                if (value === 0) {
                     missesThisRound++;
                     missesArr[currentPlayer]++;
                 }
@@ -488,11 +314,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Win-Check ohne Bust
             if (newScore === 0 && !bust) {
+                throwData[currentThrow] = {
+                    points: value,
+                    multiplier: multiplier
+                };
+                dartsThisRound++;
+                totalDartsArr[currentPlayer]++;
+                if (value === 0) {
+                    missesThisRound++;
+                    missesArr[currentPlayer]++;
+                }
                 winner = true;
                 showWinMessage(`🎉 ${players[currentPlayer].name} hat gewonnen! 🎉`);
                 disableInputs(true);
                 updateDisplay();
                 hideNextModal();
+                currentThrow++;
                 return;
             }
 
@@ -501,22 +338,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => btn.classList.remove('spin'), 600);
 
                 throwData[currentThrow] = {
-                    points: parseInt(btn.dataset.value),
+                    points: value,
                     multiplier: multiplier
                 };
 
                 dartsThisRound++;
                 totalDartsArr[currentPlayer]++;
 
-                if (parseInt(btn.dataset.value) === 0) {
+                if (value === 0) {
                     missesThisRound++;
                     missesArr[currentPlayer]++;
                 }
 
-                // **Wichtige Änderung: aktualisiere initialScore und scores beim akzeptierten Wurf**
-                initialScore = newScore;
-                scores[currentPlayer] = newScore;
-
+                // Einzelwurf wird gezählt – initialScore bleibt für die Runde konstant!
                 multiplier = 1;
                 document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('selected'));
                 currentThrow++;

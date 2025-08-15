@@ -114,6 +114,7 @@
                     <input type="hidden" name="throws[{{ $i }}][points]" id="points{{ $i }}" value="0">
                     <input type="hidden" name="throws[{{ $i }}][multiplier]" id="multiplier{{ $i }}" value="1">
                 @endfor
+                <input type="hidden" id="final_duration" name="final_duration" value="">
 
                 <div class="dart-board">
                     @for($i = 1; $i <= 20; $i++)
