@@ -283,7 +283,8 @@
 
     .player-row,
     .player-row.header {
-      background: none !important;
+      background: lightgrey;
+      border-radius: 20px 20px 0 0;
       font-size: 1.11em;
       margin-bottom: 8px;
     }
@@ -291,7 +292,7 @@
       font-weight: bold;
       background: #f9f9fc;
       border-radius: 10px 10px 0 0;
-      padding: 6px 0;
+      padding: 15px 0;
     }
     .player-row {
       display: flex;
@@ -303,7 +304,7 @@
       transition: background 0.2s, box-shadow 0.2s;
     }
     .player-row.active-player {
-      background: #d0edff;
+      background: #7284aaff;
       font-size: 1.18em;
       min-height: 56px;
       box-shadow: 0 2px 12px rgba(33,150,243,0.09);
@@ -320,9 +321,9 @@
 
     /* Aktiver Spieler: Zeile hervorheben und Text größer */
     .player-row.active-player {
-      background: #e3f4ff !important;
+      background: #7eafcdff !important;
       font-size: 1.23em;
-      border: 2px solid #2196F3;
+      border: 0px solid #2196F3;
       box-shadow: 0 2px 12px rgba(33,150,243,0.06);
     }
 
@@ -359,12 +360,12 @@
     }
 
     /* Unterschiedliche Farben für die einzelnen Werte-Spalten */
-    .player-row.active-player > div.player-score    { background: #b6e0fe; color: #09344e; }
-    .player-row.active-player > div.player-darts    { background: #e0ecf7; color: #09344e; }
-    .player-row.active-player > div.player-misses   { background: #ffd6d6; color: #700; }
+    .player-row.active-player > div.player-score    { background: #dfebf4ff; color: #000000ff; }
+    .player-row.active-player > div.player-darts    { background: #dfebf4ff; color: #000000ff; }
+    .player-row.active-player > div.player-misses   { background: #dfebf4ff; color: #000000ff; }
     .player-row.active-player > div.player-average-3dart,
-    .player-row.active-player > div.player-average-1dart { background: #ffeabf; color: #664d03; }
-    .player-row.active-player > div.player-legs     { background: #daf3e3; color: #10743f; }
+    .player-row.active-player > div.player-average-1dart { background: #dfebf4ff; color: #000000ff; }
+    .player-row.active-player > div.player-legs     { background: #dfebf4ff; color: #000000ff; }
     .player-row.active-player > div:first-child {
       background: #e3f4ff !important; /* gleicht dem Zeilenhintergrund */
       font-weight: bold;

@@ -49,44 +49,46 @@ function getStartValues() {
 function updateDisplay() {
     const { startScore, startDarts, startMisses } = getStartValues();
 
-    let sum = 0;
+    let currentScore = startScore; // Starte mit dem ursprünglichen Punktestand
     let darts = startDarts;
     let misses = startMisses;
+    let v=0;
+
     currentThrows.forEach((t, i) => {
         const v = t.points * t.multiplier;
-        sum += v;
+        currentScore -= v; // Ziehe die Punkte des aktuellen Wurfs vom Punktestand ab
         darts++;
         if (t.points === 0) misses++;
-        document.getElementById('wurf'+i+'display').textContent = v;
+        document.getElementById('wurf' + i + 'display').textContent = v;
     });
-    for(let i=currentThrows.length; i<3; i++) {
-        document.getElementById('wurf'+i+'display').textContent = '–';
+
+    for (let i = currentThrows.length; i < 3; i++) {
+        document.getElementById('wurf' + i + 'display').textContent = '–';
     }
-    document.getElementById('roundsum').textContent = sum;
 
-    // Zeige den Restscore an
-    document.getElementById('score-display-' + currentPlayer).textContent = (startScore - sum);
+    // Setze die korrekten Werte für Rundensumme und Restscore
+    const scoredPoints = startScore - currentScore; // Punkte, die erzielt wurden
+    document.getElementById('roundsum').textContent = scoredPoints;
+    document.getElementById('score-display-' + currentPlayer).textContent = currentScore;
 
-    // Darts, Misses, Durchschnitt
+    // Aktualisiere Darts, Misses und Durchschnittswerte
     document.getElementById('darts-display-' + currentPlayer).textContent = darts;
     document.getElementById('misses-display-' + currentPlayer).textContent = misses;
 
-    let currentPoints = startScore - (startScore - sum);
-    let avg1 = darts > 0 ? (currentPoints / darts) : 0;
-    let avg3 = darts > 0 ? (currentPoints / darts) * 3 : 0;
+    const avg1 = darts > 0 ? (scoredPoints / darts) : 0; // Durchschnitt pro Dart
+    const avg3 = darts > 0 ? (scoredPoints / darts) * 3 : 0; // Durchschnitt pro 3 Darts
     document.getElementById('avg3-display-' + currentPlayer).textContent = avg3.toFixed(2);
     document.getElementById('avg1-display-' + currentPlayer).textContent = avg1.toFixed(2);
 
-    // Checkout-Hilfe live
+    // Live-Update für Checkout-Hilfe
     const checkoutTable = window.checkoutTable;
-    const newScore = startScore - sum;
-    const tip = checkoutTable && checkoutTable[newScore] ? checkoutTable[newScore].join(' – ') : '–';
+    const tip = checkoutTable && checkoutTable[currentScore] ? checkoutTable[currentScore].join(' – ') : '–';
     document.getElementById('checkoutHilfe').textContent = tip;
 
     // Schreibe die aktuellen Würfe in die Hidden Felder für das Backend
-    for(let i=0; i<3; i++) {
-        document.getElementById('points'+i).value = currentThrows[i] ? currentThrows[i].points : 0;
-        document.getElementById('multiplier'+i).value = currentThrows[i] ? currentThrows[i].multiplier : 1;
+    for (let i = 0; i < 3; i++) {
+        document.getElementById('points' + i).value = currentThrows[i] ? currentThrows[i].points : 0;
+        document.getElementById('multiplier' + i).value = currentThrows[i] ? currentThrows[i].multiplier : 1;
     }
 }
 

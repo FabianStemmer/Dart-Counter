@@ -41,9 +41,9 @@ class DartController extends Controller
             'current' => 0,
         ];
 
-        foreach ($players as $player) {
+        foreach ($players as $index => $player) {
             $game['players'][] = [
-                'name' => $player,
+                'name' => ($index + 1) . '. ' . $player,
                 'score' => $gameType,
                 'darts' => [],
                 'total_darts' => 0,
